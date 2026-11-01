@@ -5,18 +5,18 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Current status
 
 - **Phase:** 1 — Foundation and backend core
-- **Milestone:** M2 done, on branch `phase-1`
+- **Milestone:** M3 done, on branch `phase-1`
 - **Last updated:** 2026-11-02
-- **Next step:** M3 — Data model and migrations, after owner approval.
-- **Waiting on owner:** approval to start M3.
-- **Open questions:** retention period for IP addresses and user agents; expiry of unconfirmed `requested` appointments, which hold their slot indefinitely until background workers exist; session buffer time between appointments; real KVKK disclosure text needs legal review.
+- **Next step:** M4 — Authentication and authorization, after owner approval.
+- **Waiting on owner:** approval to start M4.
+- **Open questions:** none. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
 - **Known issues:** `make seed` exits with an error until M6. The in-memory rate limiter counts per process.
 
 ## Phase 1 checklist
 
 - [x] M1 — Repository and tooling
 - [x] M2 — Core application skeleton
-- [ ] M3 — Data model and migrations
+- [x] M3 — Data model and migrations
 - [ ] M4 — Authentication and authorization
 - [ ] M5 — Scheduling
 - [ ] M6 — Seed data
@@ -25,6 +25,12 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Log
 
 Newest entries first.
+
+### 2026-11-02 — M3 finished
+- Added all Phase 1 models, six reversible migrations, ADR-002, ADR-003 and ADR-004.
+- Added beyond the spec, as approved: `auth_recovery_codes`, `users.totp_last_used_step`, `consents.recorded_by_user_id`, `psychologist_profiles.buffer_minutes`, the `rescheduled` cancellation reason and `invitation` token purpose. `appointment_status_history.reason` became the enum column `reason_category`.
+- Decisions: migrations are the source of truth for CHECK and EXCLUDE constraints; `appointment_status_history` is append-only for the application role; each appointment can be rescheduled at most once; `updated_at` is set by a trigger, except on the two append-only tables.
+- Owner confirmed the recommendations on the open questions. `.env` was verified absent from git history and from GitHub.
 
 ### 2026-11-02 — M2 finished
 - Added the app factory, `GET /api/v1/health`, async sessions, the error shape, structured logging with redaction, middleware (request ID, security headers, CORS, generic 500) and the swappable rate limiter. Added `structlog`.
