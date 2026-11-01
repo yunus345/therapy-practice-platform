@@ -1,0 +1,9 @@
+Seans: e-posta adresinizi doğrulayın
+
+Merhaba,
+
+Hesabınızı kullanmaya başlamak için e-posta adresinizi doğrulayın:
+
+$link
+
+Bu işlemi siz yapmadıysanız bu e-postayı dikkate almayın.

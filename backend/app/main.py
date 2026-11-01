@@ -6,12 +6,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api import api_router
+from app.core.clock import utcnow
 from app.core.config import Environment, Settings, get_settings
 from app.core.database import Database
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import register_middleware
 from app.core.rate_limit import InMemoryRateLimitBackend
+from app.modules.auth.dependencies import assert_routes_declare_access
+from app.modules.notifications.service import SmtpMailer
 
 
 @asynccontextmanager
@@ -36,8 +39,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.database = Database(settings.database_url.get_secret_value())
     app.state.rate_limit_backend = InMemoryRateLimitBackend()
+    app.state.clock = utcnow
+    app.state.mailer = SmtpMailer(settings)
 
     register_error_handlers(app)
     register_middleware(app, settings)
     app.include_router(api_router)
+    assert_routes_declare_access(app)
     return app

@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Self
 
-from pydantic import SecretStr, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -48,6 +48,30 @@ class Settings(BaseSettings):
 
     frontend_origin: str = "http://localhost:3000"
     log_level: LogLevel = LogLevel.INFO
+
+    session_idle_timeout_minutes: int = Field(default=60, gt=0)
+    session_absolute_lifetime_hours: int = Field(default=24, gt=0)
+
+    login_max_failed_attempts: int = Field(default=5, gt=0)
+    login_lockout_minutes: int = Field(default=15, gt=0)
+
+    email_verification_token_ttl_hours: int = Field(default=24, gt=0)
+    password_reset_token_ttl_minutes: int = Field(default=30, gt=0)
+    invitation_token_ttl_hours: int = Field(default=72, gt=0)
+
+    kvkk_disclosure_version: str = Field(default="1.0", max_length=32)
+    totp_issuer: str = "Seans"
+
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_start_tls: bool = False
+    email_from: str = "Seans <no-reply@seans.local>"
+
+    @property
+    def cookies_secure(self) -> bool:
+        return self.environment is not Environment.DEV
 
     @model_validator(mode="after")
     def reject_insecure_values(self) -> Self:

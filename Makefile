@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down dev migrate seed test lint fmt
+.PHONY: help up down dev migrate seed test lint fmt create-admin
 
 BACKEND := cd backend && uv run
 
@@ -24,6 +24,9 @@ migrate: ## Apply Alembic migrations
 seed: ## Load synthetic demo data
 	@echo "Seed data is not available yet: it arrives in Milestone 6." >&2
 	@exit 1
+
+create-admin: ## Create an admin account: make create-admin EMAIL=admin@example.com
+	$(BACKEND) python -m app.cli create-admin --email "$(EMAIL)"
 
 test: ## Run backend tests
 	$(BACKEND) pytest --cov --cov-report=term-missing

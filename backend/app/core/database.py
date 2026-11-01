@@ -1,11 +1,14 @@
 """Async database engine and request-scoped sessions."""
 
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, Request
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.core.errors import AppError
 
 
 class Database:
@@ -20,6 +23,29 @@ class Database:
 
     async def dispose(self) -> None:
         await self.engine.dispose()
+
+
+@asynccontextmanager
+async def write_transaction(database: Database) -> AsyncIterator[AsyncSession]:
+    """Commit on success and roll back on error.
+
+    An `AppError` with `keep_transaction` commits instead, so that a rejected request
+    can still persist its side effects, such as a failed login counter and audit entry.
+    """
+    async with database.sessions() as session:
+        try:
+            yield session
+        except AppError as error:
+            if error.keep_transaction:
+                await session.commit()
+            else:
+                await session.rollback()
+            raise
+        except Exception:
+            await session.rollback()
+            raise
+        else:
+            await session.commit()
 
 
 def get_database(request: Request) -> Database:
@@ -37,7 +63,7 @@ async def get_read_session(
 async def get_write_session(
     database: Annotated[Database, Depends(get_database)],
 ) -> AsyncIterator[AsyncSession]:
-    async with database.sessions() as session, session.begin():
+    async with write_transaction(database) as session:
         yield session
 
 

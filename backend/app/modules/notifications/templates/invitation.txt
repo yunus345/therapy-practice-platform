@@ -1,0 +1,7 @@
+Seans: hesabınız oluşturuldu
+
+Merhaba,
+
+Sizin için bir Seans hesabı oluşturuldu. Şifrenizi belirlemek için aşağıdaki bağlantıyı kullanın:
+
+$link

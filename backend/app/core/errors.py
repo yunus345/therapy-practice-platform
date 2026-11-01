@@ -15,6 +15,8 @@ class AppError(Exception):
     status_code = 400
     code = "BAD_REQUEST"
     message = "The request could not be processed."
+    # Commit the transaction even though the request fails.
+    keep_transaction = False
 
     def __init__(
         self,
