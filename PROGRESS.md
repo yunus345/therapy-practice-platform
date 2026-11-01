@@ -5,10 +5,10 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Current status
 
 - **Phase:** 1 — Foundation and backend core
-- **Milestone:** M3 done, on branch `phase-1`
+- **Milestone:** M4 done, on branch `phase-1`
 - **Last updated:** 2026-11-02
-- **Next step:** M4 — Authentication and authorization, after owner approval.
-- **Waiting on owner:** approval to start M4.
+- **Next step:** M5 — Scheduling, after owner approval.
+- **Waiting on owner:** approval to start M5.
 - **Open questions:** none. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
 - **Known issues:** `make seed` exits with an error until M6. The in-memory rate limiter counts per process.
 
@@ -17,7 +17,7 @@ Single source of truth for where the project stands. The agent keeps this file u
 - [x] M1 — Repository and tooling
 - [x] M2 — Core application skeleton
 - [x] M3 — Data model and migrations
-- [ ] M4 — Authentication and authorization
+- [x] M4 — Authentication and authorization
 - [ ] M5 — Scheduling
 - [ ] M6 — Seed data
 - [ ] M7 — Tests
@@ -25,6 +25,12 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Log
 
 Newest entries first.
+
+### 2026-11-02 — M4 finished
+- Added registration, email verification, login, logout, sessions, password reset, TOTP 2FA with recovery codes, admin account actions, audit entries, CSRF protection, email delivery and `make create-admin`.
+- Added beyond the spec: `GET /auth/csrf`, `POST /auth/verify-email/resend` (a client could otherwise never verify after the link expires, and M5 blocks unverified booking), `POST /admin/users/{id}/2fa/reset`.
+- Decisions: failed logins persist through `AppError.keep_transaction` instead of a separate transaction, which keeps tests on one rolled-back connection; an invitation uses `POST /auth/password-reset/confirm`; admins cannot deactivate or reset themselves; the 2FA rate limit counts per session, because colleagues share an office IP; the startup check fails if it finds no routes, so an upgrade of FastAPI cannot silently disable it.
+- Added dependencies: `argon2-cffi`, `pyotp`, `cryptography`, `email-validator`, `aiosmtplib`.
 
 ### 2026-11-02 — M3 finished
 - Added all Phase 1 models, six reversible migrations, ADR-002, ADR-003 and ADR-004.
