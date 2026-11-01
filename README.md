@@ -32,6 +32,15 @@ Models live in each module's `models.py`. `CHECK` and `EXCLUDE` constraints and 
 - **Logging:** logs are JSON outside dev and carry a request ID, which is also returned as `X-Request-ID`. `app/core/logging.py` redacts sensitive keys, emails, phone numbers and bearer tokens. Exception messages are dropped and only types and code locations are kept, because messages can quote personal data. Access logs contain the route template, never the raw path or query string.
 - **Rate limiting:** use `Depends(RateLimit("scope", limit, window_seconds))` on a route. The default backend is in-memory, so with several workers each one counts separately and a restart clears the counters. Implement `RateLimitBackend` to replace it with a shared store before scaling out.
 
+### Authentication and access
+
+- **Sessions:** login sets an opaque token in an `httpOnly` cookie, and only its hash is stored. See [ADR-002](docs/adr/002-server-side-sessions.md).
+- **CSRF:** every non-GET request under `/api/v1` needs a signed double-submit token: the `seans_csrf` cookie plus the same value in the `X-CSRF-Token` header. Get one from `GET /api/v1/auth/csrf` before login. Login and 2FA return a new one.
+- **Access policies:** every API route must declare `Public`, `current_user`, `require_mfa`, `require_roles(...)` or `require_session_roles(...)`. The application refuses to start if a route declares none. Services also check `Actor`, so they stay safe to call without a router.
+- **2FA:** TOTP is available to staff only. A session stays limited until it is verified, and with `REQUIRE_STAFF_2FA=true` staff must enable 2FA first. Enabling it returns 8 single-use recovery codes. An admin can reset 2FA for a staff member who lost access.
+- **Rejected requests:** an `AppError` with `keep_transaction = True` still commits, which keeps failed login counters and audit entries.
+- **Common passwords:** `app/core/data/common_passwords.txt` holds the entries of at least 10 characters from the NCSC top 100,000 list in [SecLists](https://github.com/danielmiessler/SecLists) (MIT).
+
 ## Local setup
 
 You need Docker, [uv](https://docs.astral.sh/uv/) and make.
@@ -60,6 +69,7 @@ cd backend && uv run pre-commit install
 | `make dev` | Run the backend in dev mode |
 | `make migrate` | Apply Alembic migrations |
 | `make seed` | Load synthetic demo data (available from Milestone 6) |
+| `make create-admin EMAIL=you@example.com` | Create an admin account, asking for the password |
 | `make test` | Run backend tests against the test database |
 | `make lint` | Run ruff and mypy |
 | `make fmt` | Format code |
