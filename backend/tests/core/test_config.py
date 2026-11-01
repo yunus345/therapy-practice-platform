@@ -16,6 +16,7 @@ def set_valid_env(monkeypatch: pytest.MonkeyPatch, environment: Environment) -> 
     monkeypatch.setenv("CSRF_SECRET", STRONG_SECRET)
     monkeypatch.setenv("TOTP_ENCRYPTION_KEY", STRONG_SECRET)
     monkeypatch.setenv("REQUIRE_STAFF_2FA", "true")
+    monkeypatch.setenv("FRONTEND_ORIGIN", "https://app.example.com")
 
 
 def load_settings() -> Settings:
@@ -85,6 +86,14 @@ def test_production_requires_staff_2fa(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("REQUIRE_STAFF_2FA", "false")
 
     with pytest.raises(ValidationError, match="REQUIRE_STAFF_2FA"):
+        load_settings()
+
+
+def test_production_requires_https_frontend_origin(monkeypatch: pytest.MonkeyPatch) -> None:
+    set_valid_env(monkeypatch, Environment.PRODUCTION)
+    monkeypatch.setenv("FRONTEND_ORIGIN", "http://app.example.com")
+
+    with pytest.raises(ValidationError, match="FRONTEND_ORIGIN"):
         load_settings()
 
 

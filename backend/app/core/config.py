@@ -20,6 +20,13 @@ class Environment(StrEnum):
     PRODUCTION = "production"
 
 
+class LogLevel(StrEnum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=REPO_ROOT / ".env",
@@ -38,6 +45,9 @@ class Settings(BaseSettings):
     totp_encryption_key: SecretStr
 
     require_staff_2fa: bool = False
+
+    frontend_origin: str = "http://localhost:3000"
+    log_level: LogLevel = LogLevel.INFO
 
     @model_validator(mode="after")
     def reject_insecure_values(self) -> Self:
@@ -60,8 +70,11 @@ class Settings(BaseSettings):
             )
             if INSECURE_MARKER in url.get_secret_value()
         ]
-        if self.environment is Environment.PRODUCTION and not self.require_staff_2fa:
-            problems.append("REQUIRE_STAFF_2FA")
+        if self.environment is Environment.PRODUCTION:
+            if not self.require_staff_2fa:
+                problems.append("REQUIRE_STAFF_2FA")
+            if not self.frontend_origin.startswith("https://"):
+                problems.append("FRONTEND_ORIGIN")
 
         if problems:
             raise ValueError(f"Insecure settings: {', '.join(problems)}")

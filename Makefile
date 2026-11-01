@@ -16,7 +16,7 @@ down: ## Stop local infra (keeps data volumes)
 	docker compose down
 
 dev: ## Run backend in dev mode
-	$(BACKEND) uvicorn app.main:create_app --factory --reload
+	$(BACKEND) uvicorn app.main:create_app --factory --reload --no-access-log
 
 migrate: ## Apply Alembic migrations
 	$(BACKEND) alembic upgrade head

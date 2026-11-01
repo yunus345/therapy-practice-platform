@@ -19,6 +19,13 @@ Each backend module in `backend/app/modules/` has its own router, schemas, servi
 
 The application connects with a restricted role (`seans_app`). Migrations run as the schema owner (`seans_owner`). The restricted role is created by [`docker/postgres/init/01-roles-and-databases.sh`](docker/postgres/init/01-roles-and-databases.sh), which also creates the test database. Docker runs this script only when the data volume is empty.
 
+### Cross-cutting behavior
+
+- **Errors:** every error uses `{"error": {"code", "message", "details"}}`. Unhandled errors return a generic 500. Validation errors list field locations and never echo submitted values.
+- **Transactions:** routes that write use `WriteSession`, which opens one transaction per request and commits before the response is sent.
+- **Logging:** logs are JSON outside dev and carry a request ID, which is also returned as `X-Request-ID`. `app/core/logging.py` redacts sensitive keys, emails, phone numbers and bearer tokens. Exception messages are dropped and only types and code locations are kept, because messages can quote personal data. Access logs contain the route template, never the raw path or query string.
+- **Rate limiting:** use `Depends(RateLimit("scope", limit, window_seconds))` on a route. The default backend is in-memory, so with several workers each one counts separately and a restart clears the counters. Implement `RateLimitBackend` to replace it with a shared store before scaling out.
+
 ## Local setup
 
 You need Docker, [uv](https://docs.astral.sh/uv/) and make.
