@@ -5,17 +5,17 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Current status
 
 - **Phase:** 1 — Foundation and backend core
-- **Milestone:** M1 done, on local branch `phase-1`
+- **Milestone:** M2 done, on branch `phase-1`
 - **Last updated:** 2026-11-02
-- **Next step:** M2 — Core application skeleton, after owner approval.
-- **Waiting on owner:** approval to start M2; approval to push `phase-1` so that CI can run on GitHub.
+- **Next step:** M3 — Data model and migrations, after owner approval.
+- **Waiting on owner:** approval to start M3.
 - **Open questions:** retention period for IP addresses and user agents; expiry of unconfirmed `requested` appointments, which hold their slot indefinitely until background workers exist; session buffer time between appointments; real KVKK disclosure text needs legal review.
-- **Known issues:** the GitHub Actions workflow has not run on GitHub yet. Its bootstrap script and test suite were verified locally against a throwaway `pgvector/pgvector:pg17` container. `make seed` exits with an error until M6.
+- **Known issues:** `make seed` exits with an error until M6. The in-memory rate limiter counts per process.
 
 ## Phase 1 checklist
 
 - [x] M1 — Repository and tooling
-- [ ] M2 — Core application skeleton
+- [x] M2 — Core application skeleton
 - [ ] M3 — Data model and migrations
 - [ ] M4 — Authentication and authorization
 - [ ] M5 — Scheduling
@@ -25,6 +25,12 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Log
 
 Newest entries first.
+
+### 2026-11-02 — M2 finished
+- Added the app factory, `GET /api/v1/health`, async sessions, the error shape, structured logging with redaction, middleware (request ID, security headers, CORS, generic 500) and the swappable rate limiter. Added `structlog`.
+- Fixed CI: the first run failed because `astral-sh/setup-uv` has no `v10` tag. Actions now use full version tags, and the runner is pinned to `ubuntu-24.04`.
+- Decisions: write sessions use `Depends(scope="function")`, so the commit finishes before the response; request IDs are always generated, never accepted from clients; exception messages never reach logs; `/health` is limited to 120 requests per minute per IP.
+- Note: the owner confirmed the phase-1 push. The GitHub repository is public.
 
 ### 2026-11-02 — M1 finished
 - Owner approved the Phase 1 plan, including all 12 recommendations from the planning questions and the listed decisions.
