@@ -19,6 +19,12 @@ Each backend module in `backend/app/modules/` has its own router, schemas, servi
 
 The application connects with a restricted role (`seans_app`). Migrations run as the schema owner (`seans_owner`). The restricted role is created by [`docker/postgres/init/01-roles-and-databases.sh`](docker/postgres/init/01-roles-and-databases.sh), which also creates the test database. Docker runs this script only when the data volume is empty.
 
+The restricted role cannot change `audit_logs` or `appointment_status_history`, and triggers block changes to `audit_logs` for every role. See [ADR-004](docs/adr/004-audit-log-immutability.md).
+
+### Data model
+
+Models live in each module's `models.py`. `CHECK` and `EXCLUDE` constraints and triggers live in `backend/alembic/versions/`, which are the source of truth for them. A test fails if the models and the migrations drift apart. Double booking is prevented by a database constraint, see [ADR-003](docs/adr/003-exclusion-constraint-for-double-booking.md).
+
 ### Cross-cutting behavior
 
 - **Errors:** every error uses `{"error": {"code", "message", "details"}}`. Unhandled errors return a generic 500. Validation errors list field locations and never echo submitted values.
