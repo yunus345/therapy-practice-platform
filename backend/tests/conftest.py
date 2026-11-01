@@ -46,7 +46,10 @@ def alembic_config() -> Config:
 
 @pytest.fixture(scope="session")
 def migrated_database() -> Iterator[None]:
-    command.upgrade(alembic_config(), "head")
+    """Rebuild the schema, so that leftover rows from earlier runs cannot affect tests."""
+    config = alembic_config()
+    command.downgrade(config, "base")
+    command.upgrade(config, "head")
     yield
 
 
