@@ -9,11 +9,9 @@ from app.core.clock import utcnow
 from app.core.config import get_settings
 from app.core.database import Database, write_transaction
 from app.core.errors import AppError
-from app.modules.audit.repository import AuditRepository
-from app.modules.audit.service import AuditService
+from app.modules.audit.service import build_audit_service
 from app.modules.users.admin_service import create_first_admin
-from app.modules.users.repository import UserRepository
-from app.modules.users.service import UserService
+from app.modules.users.service import build_user_service
 
 
 async def create_admin(email: str, password: str) -> None:
@@ -21,8 +19,8 @@ async def create_admin(email: str, password: str) -> None:
     try:
         async with write_transaction(database) as session:
             await create_first_admin(
-                UserService(UserRepository(session), utcnow),
-                AuditService(AuditRepository(session)),
+                build_user_service(session, utcnow),
+                build_audit_service(session),
                 utcnow,
                 email,
                 password,

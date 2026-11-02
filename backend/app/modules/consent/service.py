@@ -1,5 +1,7 @@
 import uuid
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.modules.consent.models import Consent, ConsentType
 from app.modules.consent.repository import ConsentRepository
 
@@ -24,3 +26,7 @@ class ConsentService:
                 recorded_by_user_id=recorded_by_user_id,
             )
         )
+
+
+def build_consent_service(session: AsyncSession) -> ConsentService:
+    return ConsentService(ConsentRepository(session))

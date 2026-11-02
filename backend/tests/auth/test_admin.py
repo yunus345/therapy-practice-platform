@@ -7,8 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.clock import utcnow
 from app.main import create_app
 from app.modules.audit.models import AuditLog
-from app.modules.audit.repository import AuditRepository
-from app.modules.audit.service import AuditService
+from app.modules.audit.service import build_audit_service
 from app.modules.auth.dependencies import (
     api_routes,
     assert_routes_declare_access,
@@ -19,8 +18,7 @@ from app.modules.notifications.service import EmailTemplate
 from app.modules.users.actor import Actor, ForbiddenError
 from app.modules.users.admin_service import AdminService, create_first_admin
 from app.modules.users.models import PsychologistProfile, User, UserRole
-from app.modules.users.repository import UserRepository
-from app.modules.users.service import EmailTakenError, UserService
+from app.modules.users.service import EmailTakenError, build_user_service
 from tests.auth.test_two_factor import enable_two_factor
 from tests.conftest import (
     DEFAULT_PASSWORD,
@@ -38,13 +36,6 @@ PSYCHOLOGIST = {
     "last_name": "Hopper",
     "slug": "grace-hopper",
 }
-
-
-@pytest.fixture
-async def admin(api: httpx.AsyncClient, make_user: UserFactory) -> User:
-    user = await make_user(UserRole.ADMIN)
-    await log_in(api, user.email)
-    return user
 
 
 async def test_admin_creates_psychologist_who_sets_a_password_from_the_invitation(
@@ -177,9 +168,9 @@ async def test_admin_service_enforces_the_role_without_a_router(
     client_actor = Actor(user_id=(await make_user()).id, role=UserRole.CLIENT)
     target = await make_user()
     service = AdminService(
-        UserService(UserRepository(db_session), clock),
+        build_user_service(db_session, clock),
         None,  # type: ignore[arg-type]
-        AuditService(AuditRepository(db_session)),
+        build_audit_service(db_session),
         clock,
     )
 
@@ -190,8 +181,8 @@ async def test_admin_service_enforces_the_role_without_a_router(
 class TestCreateFirstAdmin:
     async def test_creates_a_verified_admin(self, db_session: AsyncSession) -> None:
         user = await create_first_admin(
-            UserService(UserRepository(db_session), utcnow),
-            AuditService(AuditRepository(db_session)),
+            build_user_service(db_session, utcnow),
+            build_audit_service(db_session),
             utcnow,
             "root@example.com",
             DEFAULT_PASSWORD,
@@ -203,8 +194,8 @@ class TestCreateFirstAdmin:
     async def test_rejects_weak_passwords(self, db_session: AsyncSession) -> None:
         with pytest.raises(WeakPasswordError):
             await create_first_admin(
-                UserService(UserRepository(db_session), utcnow),
-                AuditService(AuditRepository(db_session)),
+                build_user_service(db_session, utcnow),
+                build_audit_service(db_session),
                 utcnow,
                 "root@example.com",
                 "1234567890",
@@ -217,8 +208,8 @@ class TestCreateFirstAdmin:
 
         with pytest.raises(EmailTakenError):
             await create_first_admin(
-                UserService(UserRepository(db_session), utcnow),
-                AuditService(AuditRepository(db_session)),
+                build_user_service(db_session, utcnow),
+                build_audit_service(db_session),
                 utcnow,
                 user.email,
                 DEFAULT_PASSWORD,
@@ -246,6 +237,8 @@ async def test_public_routes_are_the_expected_ones(api_app: FastAPI) -> None:
         "/api/v1/auth/login",
         "/api/v1/auth/password-reset/request",
         "/api/v1/auth/password-reset/confirm",
+        "/api/v1/public/psychologists/{slug}",
+        "/api/v1/public/psychologists/{slug}/slots",
     }
 
 

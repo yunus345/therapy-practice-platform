@@ -5,9 +5,11 @@ the source of truth for them. `tests/data/test_constraints.py` verifies them.
 """
 
 import uuid
+from collections.abc import Mapping
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import DateTime, Enum, FetchedValue, MetaData, Numeric, Text, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -47,6 +49,11 @@ class TimestampMixin(CreatedAtMixin):
     updated_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), server_onupdate=FetchedValue()
     )
+
+
+def changed_values(row: Base, values: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep the values that differ from the row, so that a no-op stays unwritten and unaudited."""
+    return {name: value for name, value in values.items() if getattr(row, name) != value}
 
 
 def pg_enum(enum_class: type[StrEnum], name: str) -> Enum:

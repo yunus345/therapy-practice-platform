@@ -31,6 +31,12 @@ class AppError(Exception):
         super().__init__(self.code)
 
 
+class NotFoundError(AppError):
+    status_code = 404
+    code = "NOT_FOUND"
+    message = "Not Found"
+
+
 class ServiceUnavailableError(AppError):
     status_code = 503
     code = "SERVICE_UNAVAILABLE"

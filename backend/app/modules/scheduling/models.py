@@ -24,9 +24,19 @@ class AppointmentStatus(StrEnum):
     NO_SHOW = "no_show"
 
 
+# The statuses that hold a slot, as in the exclusion constraint.
+ACTIVE_STATUSES = frozenset({AppointmentStatus.REQUESTED, AppointmentStatus.CONFIRMED})
+
+
 class BookingChannel(StrEnum):
     ONLINE = "online"
     STAFF = "staff"
+
+
+class AppointmentWhen(StrEnum):
+    UPCOMING = "upcoming"
+    PAST = "past"
+    ALL = "all"
 
 
 class CancellationReason(StrEnum):

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.core.config import Environment, Settings
+from app.core.config import REPO_ROOT, Environment, Settings
 from app.main import create_app
 
 STRONG_SECRET = "x" * 32
@@ -117,6 +117,35 @@ def test_settings_repr_hides_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert STRONG_SECRET not in settings_repr
     assert "strong-password" not in settings_repr
+
+
+def test_slot_settings_have_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    set_valid_env(monkeypatch, Environment.PRODUCTION)
+
+    settings = load_settings()
+
+    assert settings.slot_granularity_minutes == 15
+    assert settings.slot_max_range_days == 31
+
+
+@pytest.mark.parametrize("name", ["SLOT_GRANULARITY_MINUTES", "SLOT_MAX_RANGE_DAYS"])
+@pytest.mark.parametrize("value", ["0", "-1"])
+def test_slot_settings_must_be_positive(
+    monkeypatch: pytest.MonkeyPatch, name: str, value: str
+) -> None:
+    set_valid_env(monkeypatch, Environment.PRODUCTION)
+    monkeypatch.setenv(name, value)
+
+    with pytest.raises(ValidationError, match=name.lower()):
+        load_settings()
+
+
+def test_env_example_documents_every_setting() -> None:
+    example = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")
+
+    undocumented = [name for name in Settings.model_fields if name.upper() not in example]
+
+    assert undocumented == []
 
 
 def test_app_refuses_to_start_with_invalid_settings(

@@ -2,6 +2,8 @@ import uuid
 from enum import StrEnum
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.modules.audit.models import AuditLog
 from app.modules.audit.repository import AuditRepository
 
@@ -24,6 +26,24 @@ class AuditAction(StrEnum):
     USER_CREATED = "users.created"
     USER_ACTIVATED = "users.activated"
     USER_DEACTIVATED = "users.deactivated"
+    CLIENT_CREATED = "clients.created"
+    CLIENT_UPDATED = "clients.updated"
+    CLIENT_CARE_ENDED = "clients.care_ended"
+    SERVICE_CREATED = "catalog.service_created"
+    SERVICE_UPDATED = "catalog.service_updated"
+    SERVICE_DEACTIVATED = "catalog.service_deactivated"
+    SERVICE_ASSIGNED = "catalog.service_assigned"
+    SERVICE_UNASSIGNED = "catalog.service_unassigned"
+    PROFILE_UPDATED = "profile.updated"
+    AVAILABILITY_CREATED = "availability.created"
+    AVAILABILITY_UPDATED = "availability.updated"
+    AVAILABILITY_DELETED = "availability.deleted"
+    TIME_OFF_CREATED = "time_off.created"
+    TIME_OFF_UPDATED = "time_off.updated"
+    TIME_OFF_DELETED = "time_off.deleted"
+    APPOINTMENT_CREATED = "appointments.created"
+    APPOINTMENT_STATUS_CHANGED = "appointments.status_changed"
+    APPOINTMENT_RESCHEDULED = "appointments.rescheduled"
 
 
 class AuditService:
@@ -51,3 +71,7 @@ class AuditService:
                 event_metadata=metadata or {},
             )
         )
+
+
+def build_audit_service(session: AsyncSession) -> AuditService:
+    return AuditService(AuditRepository(session))

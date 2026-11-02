@@ -30,6 +30,10 @@ class Client(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     created_by_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     deleted_at: Mapped[datetime | None]
 
+    @property
+    def has_account(self) -> bool:
+        return self.user_id is not None
+
 
 class PsychologistClient(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """Care relationship used for object-level authorization."""

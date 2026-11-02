@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.core.config import Environment
-from app.core.errors import AppError
+from app.core.errors import AppError, NotFoundError
 from app.main import create_app
 from tests.conftest import SettingsFactory
 
@@ -94,6 +94,20 @@ async def test_unknown_route_uses_the_error_shape(client: httpx.AsyncClient) -> 
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+async def test_missing_row_looks_the_same_as_an_unknown_route(
+    app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    @app.get("/missing-row")
+    async def missing_row() -> None:
+        raise NotFoundError
+
+    missing = await client.get("/missing-row")
+    unknown = await client.get("/api/v1/missing")
+
+    assert missing.status_code == unknown.status_code == 404
+    assert missing.json() == unknown.json()
 
 
 async def test_wrong_method_uses_the_error_shape(client: httpx.AsyncClient) -> None:

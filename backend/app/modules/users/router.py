@@ -4,36 +4,37 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.core.database import WriteSession
-from app.modules.audit.repository import AuditRepository
-from app.modules.audit.service import AuditService
 from app.modules.auth.dependencies import (
+    AdminActor,
     AuthServiceDep,
     ClockDep,
+    PsychologistActor,
     RequestMetaDep,
-    require_roles,
 )
-from app.modules.users.actor import Actor
-from app.modules.users.admin_service import AdminService
-from app.modules.users.models import User, UserRole
-from app.modules.users.repository import UserRepository
-from app.modules.users.schemas import AdminUserResponse, CreatePsychologistRequest
-from app.modules.users.service import UserService
+from app.modules.users.admin_service import AdminService, build_admin_service
+from app.modules.users.models import User
+from app.modules.users.profile_service import ProfileService, build_profile_service
+from app.modules.users.schemas import (
+    AdminUserResponse,
+    CreatePsychologistRequest,
+    ProfileResponse,
+    UpdateProfileRequest,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-
-AdminActor = Annotated[Actor, Depends(require_roles(UserRole.ADMIN))]
+profile_router = APIRouter(prefix="/staff/profile", tags=["profile"])
 
 
 def get_admin_service(session: WriteSession, auth: AuthServiceDep, clock: ClockDep) -> AdminService:
-    return AdminService(
-        UserService(UserRepository(session), clock),
-        auth,
-        AuditService(AuditRepository(session)),
-        clock,
-    )
+    return build_admin_service(session, auth, clock)
+
+
+def get_profile_service(session: WriteSession, clock: ClockDep) -> ProfileService:
+    return build_profile_service(session, clock)
 
 
 AdminServiceDep = Annotated[AdminService, Depends(get_admin_service)]
+ProfileServiceDep = Annotated[ProfileService, Depends(get_profile_service)]
 
 
 def _user_response(user: User) -> AdminUserResponse:
@@ -80,3 +81,19 @@ async def reset_two_factor(
     user_id: uuid.UUID, actor: AdminActor, service: AdminServiceDep, meta: RequestMetaDep
 ) -> None:
     await service.reset_two_factor(actor, user_id, ip_address=meta.ip_address)
+
+
+@profile_router.get("")
+async def get_profile(actor: PsychologistActor, service: ProfileServiceDep) -> ProfileResponse:
+    return ProfileResponse.model_validate(await service.get_own(actor))
+
+
+@profile_router.patch("")
+async def update_profile(
+    body: UpdateProfileRequest,
+    actor: PsychologistActor,
+    service: ProfileServiceDep,
+    meta: RequestMetaDep,
+) -> ProfileResponse:
+    profile = await service.update_own(actor, body, ip_address=meta.ip_address)
+    return ProfileResponse.model_validate(profile)

@@ -8,10 +8,11 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 import pyotp
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
 from app.core.config import Settings
-from app.core.errors import AppError
+from app.core.errors import AppError, NotFoundError
 from app.core.security import (
     SecretBox,
     generate_token,
@@ -20,16 +21,16 @@ from app.core.security import (
     password_needs_rehash,
     verify_password,
 )
-from app.modules.audit.service import AuditAction, AuditService
+from app.modules.audit.service import AuditAction, AuditService, build_audit_service
 from app.modules.auth.models import AuthSession, AuthToken, AuthTokenPurpose
 from app.modules.auth.passwords import ensure_acceptable_password
 from app.modules.auth.repository import AuthRepository
-from app.modules.clients.service import ClientService
-from app.modules.consent.service import ConsentService
+from app.modules.clients.service import ClientService, build_client_service
+from app.modules.consent.service import ConsentService, build_consent_service
 from app.modules.notifications.service import Email, EmailQueue, EmailTemplate
 from app.modules.users.actor import STAFF_ROLES, Actor
 from app.modules.users.models import User, UserRole
-from app.modules.users.service import EmailTakenError, UserService
+from app.modules.users.service import EmailTakenError, UserService, build_user_service
 
 TOTP_PERIOD_SECONDS = 30
 # Accepted clock drift, in time steps on either side of the current one.
@@ -83,12 +84,6 @@ class TwoFactorStateError(AppError):
     status_code = 409
     code = "TWO_FACTOR_STATE_INVALID"
     message = "This action does not apply to the current two-factor state."
-
-
-class SessionNotFoundError(AppError):
-    status_code = 404
-    code = "NOT_FOUND"
-    message = "Not Found"
 
 
 @dataclass(frozen=True)
@@ -268,7 +263,7 @@ class AuthService:
     async def revoke_session(self, actor: Actor, session_id: uuid.UUID, meta: RequestMeta) -> None:
         auth_session = await self._repository.get_session(session_id)
         if auth_session is None or auth_session.user_id != actor.user_id:
-            raise SessionNotFoundError
+            raise NotFoundError
         if auth_session.revoked_at is None:
             auth_session.revoked_at = self._clock()
             await self._repository.flush()
@@ -598,3 +593,18 @@ class AuthService:
         if user is None:
             raise NotAuthenticatedError
         return user
+
+
+def build_auth_service(
+    session: AsyncSession, emails: EmailQueue, settings: Settings, clock: Clock
+) -> AuthService:
+    return AuthService(
+        AuthRepository(session),
+        build_user_service(session, clock),
+        build_client_service(session, settings, clock),
+        build_consent_service(session),
+        build_audit_service(session),
+        emails,
+        settings,
+        clock,
+    )

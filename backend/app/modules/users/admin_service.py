@@ -2,23 +2,19 @@
 
 import uuid
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.clock import Clock
-from app.core.errors import AppError
+from app.core.errors import AppError, NotFoundError
 from app.core.security import hash_password
-from app.modules.audit.service import AuditAction, AuditService
+from app.modules.audit.service import AuditAction, AuditService, build_audit_service
 from app.modules.auth.passwords import ensure_acceptable_password
 from app.modules.auth.service import AuthService
 from app.modules.users.actor import Actor
 from app.modules.users.models import PsychologistProfile, User, UserRole
-from app.modules.users.service import UserService
+from app.modules.users.service import UserService, build_user_service
 
 USER_ENTITY = "user"
-
-
-class UserNotFoundError(AppError):
-    status_code = 404
-    code = "NOT_FOUND"
-    message = "Not Found"
 
 
 class CannotTargetSelfError(AppError):
@@ -91,7 +87,7 @@ class AdminService:
             raise CannotTargetSelfError
         user = await self._users.get(user_id)
         if user is None:
-            raise UserNotFoundError
+            raise NotFoundError
         return user
 
     async def _record(
@@ -104,6 +100,12 @@ class AdminService:
             entity_id=user_id,
             ip_address=ip_address,
         )
+
+
+def build_admin_service(session: AsyncSession, auth: AuthService, clock: Clock) -> AdminService:
+    return AdminService(
+        build_user_service(session, clock), auth, build_audit_service(session), clock
+    )
 
 
 async def create_first_admin(

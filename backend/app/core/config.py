@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     password_reset_token_ttl_minutes: int = Field(default=30, gt=0)
     invitation_token_ttl_hours: int = Field(default=72, gt=0)
 
+    slot_granularity_minutes: int = Field(default=15, gt=0)
+    slot_max_range_days: int = Field(default=31, gt=0)
+
     kvkk_disclosure_version: str = Field(default="1.0", max_length=32)
     totp_issuer: str = "Seans"
 

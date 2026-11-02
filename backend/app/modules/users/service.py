@@ -1,10 +1,14 @@
-"""User records. Access control lies with the callers: auth and the admin service."""
+"""User records and profiles. Access control lies with the callers."""
 
 import uuid
+from collections.abc import Collection, Mapping
 from datetime import datetime, timedelta
+from typing import Any
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
-from app.core.errors import AppError
+from app.core.errors import AppError, NotFoundError
 from app.modules.users.models import PsychologistProfile, User
 from app.modules.users.repository import UserRepository
 
@@ -40,6 +44,36 @@ class UserService:
         if not await self._repository.add_unique(profile):
             raise SlugTakenError
 
+    async def update_profile(
+        self, profile: PsychologistProfile, changes: Mapping[str, Any]
+    ) -> None:
+        if not await self._repository.update_profile(profile, changes):
+            raise SlugTakenError
+
+    async def get_profile(self, user_id: uuid.UUID) -> PsychologistProfile | None:
+        return await self._repository.get_profile(user_id)
+
+    async def get_active_profile_by_slug(self, slug: str) -> PsychologistProfile | None:
+        """Return the profile of a psychologist whose account can receive bookings."""
+        return await self._repository.get_active_profile_by_slug(slug)
+
+    async def get_profiles(
+        self, user_ids: Collection[uuid.UUID]
+    ) -> Mapping[uuid.UUID, PsychologistProfile]:
+        profiles = await self._repository.get_profiles(user_ids)
+        return {profile.user_id: profile for profile in profiles}
+
+    async def lock_profile(self, user_id: uuid.UUID, exclusive: bool) -> PsychologistProfile:
+        """Lock a profile until the transaction ends and return its current state.
+
+        Shared locks let bookings run in parallel, leaving the exclusion constraint to
+        decide between them. An exclusive lock is for checks that constraint cannot make.
+        """
+        profile = await self._repository.lock_profile(user_id, exclusive)
+        if profile is None:
+            raise NotFoundError
+        return profile
+
     async def record_failed_attempt(
         self, user: User, max_attempts: int, lockout: timedelta
     ) -> None:
@@ -56,3 +90,7 @@ class UserService:
 
     async def save(self) -> None:
         await self._repository.flush()
+
+
+def build_user_service(session: AsyncSession, clock: Clock) -> UserService:
+    return UserService(UserRepository(session), clock)

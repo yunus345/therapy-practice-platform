@@ -4,18 +4,17 @@ from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.core.schemas import PersonName, Phone
 from app.modules.auth.passwords import MAX_PASSWORD_LENGTH
 from app.modules.users.models import UserRole
-
-PHONE_PATTERN = r"^\+?[0-9][0-9 ()-]{8,18}[0-9]$"
 
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(max_length=MAX_PASSWORD_LENGTH)
-    first_name: str = Field(min_length=1, max_length=100)
-    last_name: str = Field(min_length=1, max_length=100)
-    phone: str = Field(pattern=PHONE_PATTERN)
+    first_name: PersonName
+    last_name: PersonName
+    phone: Phone
     kvkk_accepted: Literal[True]
 
 

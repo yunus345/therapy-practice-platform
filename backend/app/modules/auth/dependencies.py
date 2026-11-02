@@ -12,17 +12,13 @@ from typing import Annotated, Any
 from fastapi import BackgroundTasks, Depends, FastAPI, Request
 from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute, iter_route_contexts
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
 from app.core.config import Settings
 from app.core.database import WriteSession
 from app.core.rate_limit import client_ip
 from app.core.security import hash_token
-from app.modules.audit.repository import AuditRepository
-from app.modules.audit.service import AuditService
 from app.modules.auth.csrf import SESSION_COOKIE
-from app.modules.auth.repository import AuthRepository
 from app.modules.auth.service import (
     AuthService,
     MfaRequiredError,
@@ -30,16 +26,11 @@ from app.modules.auth.service import (
     RequestMeta,
     SessionContext,
     TwoFactorSetupRequiredError,
+    build_auth_service,
 )
-from app.modules.clients.repository import ClientRepository
-from app.modules.clients.service import ClientService
-from app.modules.consent.repository import ConsentRepository
-from app.modules.consent.service import ConsentService
 from app.modules.notifications.service import BackgroundEmailQueue, EmailQueue
-from app.modules.users.actor import Actor
+from app.modules.users.actor import STAFF_ROLES, Actor
 from app.modules.users.models import UserRole
-from app.modules.users.repository import UserRepository
-from app.modules.users.service import UserService
 
 ACCESS_POLICY_ATTRIBUTE = "__access_policy__"
 
@@ -76,21 +67,6 @@ def session_rate_limit_key(request: Request) -> str:
 
 def get_email_queue(request: Request, background_tasks: BackgroundTasks) -> EmailQueue:
     return BackgroundEmailQueue(background_tasks, request.app.state.mailer)
-
-
-def build_auth_service(
-    session: AsyncSession, emails: EmailQueue, settings: Settings, clock: Clock
-) -> AuthService:
-    return AuthService(
-        AuthRepository(session),
-        UserService(UserRepository(session), clock),
-        ClientService(ClientRepository(session)),
-        ConsentService(ConsentRepository(session)),
-        AuditService(AuditRepository(session)),
-        emails,
-        settings,
-        clock,
-    )
 
 
 def get_auth_service(
@@ -167,6 +143,12 @@ def require_session_roles(*roles: UserRole) -> Callable[..., Awaitable[Actor]]:
         return actor
 
     return _declare_policy(f"session_roles:{','.join(sorted(roles))}", dependency)
+
+
+AdminActor = Annotated[Actor, Depends(require_roles(UserRole.ADMIN))]
+ClientActor = Annotated[Actor, Depends(require_roles(UserRole.CLIENT))]
+PsychologistActor = Annotated[Actor, Depends(require_roles(UserRole.PSYCHOLOGIST))]
+StaffActor = Annotated[Actor, Depends(require_roles(*STAFF_ROLES))]
 
 
 def route_policies(dependant: Dependant) -> set[str]:
