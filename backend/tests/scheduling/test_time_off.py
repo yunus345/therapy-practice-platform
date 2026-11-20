@@ -491,6 +491,29 @@ class TestList:
         assert response.status_code == 200
         assert self.ids(response) == [str(period.id)]
 
+    async def test_admin_does_not_see_the_reason(
+        self,
+        api: httpx.AsyncClient,
+        admin: User,
+        therapist: User,
+        make_time_off: TimeOffFactory,
+    ) -> None:
+        await make_time_off(therapist, reason="Private")
+
+        response = await api.get(TIME_OFF, params={"psychologist_id": str(therapist.id)})
+
+        assert response.json()["items"][0]["reason"] is None
+        assert "Private" not in response.text
+
+    async def test_the_psychologist_sees_their_own_reason(
+        self, api: httpx.AsyncClient, psychologist: User, make_time_off: TimeOffFactory
+    ) -> None:
+        await make_time_off(psychologist, reason="Conference")
+
+        response = await api.get(TIME_OFF)
+
+        assert response.json()["items"][0]["reason"] == "Conference"
+
     async def test_admin_naming_an_unknown_psychologist_gets_404(
         self, api: httpx.AsyncClient, admin: User
     ) -> None:

@@ -189,6 +189,31 @@ class StaffAppointment:
     updated_at: datetime
 
 
+@dataclass(frozen=True)
+class TimeOffPeriod:
+    """A period of time off. `reason` is private to its psychologist: None for anyone else."""
+
+    id: uuid.UUID
+    psychologist_id: uuid.UUID
+    starts_at: datetime
+    ends_at: datetime
+    reason: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+def _time_off_view(time_off: TimeOff, *, with_reason: bool) -> TimeOffPeriod:
+    return TimeOffPeriod(
+        id=time_off.id,
+        psychologist_id=time_off.psychologist_id,
+        starts_at=time_off.starts_at,
+        ends_at=time_off.ends_at,
+        reason=time_off.reason if with_reason else None,
+        created_at=time_off.created_at,
+        updated_at=time_off.updated_at,
+    )
+
+
 def _client_view(
     appointment: Appointment, profile: PsychologistProfile, service: ServiceSummary
 ) -> ClientAppointment:
@@ -348,13 +373,18 @@ class SchedulingService:
         *,
         start: datetime | None = None,
         end: datetime | None = None,
-    ) -> tuple[Sequence[TimeOff], int]:
-        """List the periods of a schedule, optionally only those overlapping start to end."""
+    ) -> tuple[list[TimeOffPeriod], int]:
+        """List the periods of a schedule, optionally only those overlapping start to end.
+
+        An admin sees when a psychologist is away, but not why.
+        """
         owner = await self._schedule_owner(actor, psychologist_id)
         if start is not None and end is not None and end < start:
             raise DateRangeInvalidError
         periods = await self._repository.list_time_off(owner, start, end, page.limit, page.offset)
-        return periods, await self._repository.count_time_off(owner, start, end)
+        total = await self._repository.count_time_off(owner, start, end)
+        with_reason = owner == actor.user_id
+        return [_time_off_view(period, with_reason=with_reason) for period in periods], total
 
     async def create_time_off(
         self, actor: Actor, request: CreateTimeOffRequest, *, ip_address: str | None
