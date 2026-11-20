@@ -21,9 +21,8 @@ dev: ## Run backend in dev mode
 migrate: ## Apply Alembic migrations
 	$(BACKEND) alembic upgrade head
 
-seed: ## Load synthetic demo data
-	@echo "Seed data is not available yet: it arrives in Milestone 6." >&2
-	@exit 1
+seed: ## Load synthetic demo data into an empty dev database
+	$(BACKEND) python -m app.seed
 
 create-admin: ## Create an admin account: make create-admin EMAIL=admin@example.com
 	$(BACKEND) python -m app.cli create-admin --email "$(EMAIL)"
