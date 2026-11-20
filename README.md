@@ -57,10 +57,22 @@ You need Docker, [uv](https://docs.astral.sh/uv/) and make.
 make up                           # creates .env from .env.example, starts Postgres and Mailpit
 cd backend && uv sync && cd ..    # installs the Python toolchain and dependencies
 make migrate
+make seed                         # optional: synthetic demo data, see below
 make dev                          # API on http://localhost:8000, docs on /docs
 ```
 
 Mailpit shows captured dev email on <http://localhost:8025>.
+
+### Demo data
+
+`make seed` fills an empty dev database with synthetic data: an admin, two psychologists, five services, 80 clients and about 30 weeks of appointments around today. It prints the demo logins at the end; every account uses the password `seans-demo-2026`. The rules that decide how sessions turn out live in `backend/app/seed/behavior.py`, see [ADR-005](docs/adr/005-synthetic-seed-data.md).
+
+The seed runs only with `ENVIRONMENT=dev` and refuses a database that already has users. To start over, recreate the schema. This deletes all local data:
+
+```sh
+cd backend && uv run alembic downgrade base && uv run alembic upgrade head && cd ..
+make seed
+```
 
 To enable the pre-commit hooks once:
 
@@ -76,7 +88,7 @@ cd backend && uv run pre-commit install
 | `make down` | Stop local infrastructure, keeping data |
 | `make dev` | Run the backend in dev mode |
 | `make migrate` | Apply Alembic migrations |
-| `make seed` | Load synthetic demo data (available from Milestone 6) |
+| `make seed` | Load synthetic demo data into an empty dev database |
 | `make create-admin EMAIL=you@example.com` | Create an admin account, asking for the password |
 | `make test` | Run backend tests against the test database |
 | `make lint` | Run ruff and mypy |

@@ -5,12 +5,12 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Current status
 
 - **Phase:** 1 — Foundation and backend core
-- **Milestone:** M5 done, on branch `phase-1`
+- **Milestone:** M6 done, on branch `phase-1`
 - **Last updated:** 2026-11-20
-- **Next step:** M6 — Seed data, after owner approval.
-- **Waiting on owner:** approval to start M6.
+- **Next step:** M7 — Tests, after owner approval.
+- **Waiting on owner:** approval to start M7.
 - **Open questions:** none. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered. The repository stays on the iCloud-synced Desktop for now; move it if sync causes trouble.
-- **Known issues:** `make seed` exits with an error until M6. The in-memory rate limiter counts per process. Restoring a soft-deleted client writes a `clients.updated` audit entry without an actor. Boolean confirmation fields typed `Literal[True]` also accept the JSON number `1`. A rare deadlock while a booking upgrades to an exclusive profile lock returns 500 instead of `SLOT_TAKEN`. Slot calculation is untested for zones with unusual DST rules such as `America/Nuuk`. To be fixed in M7.
+- **Known issues:** The in-memory rate limiter counts per process. Restoring a soft-deleted client writes a `clients.updated` audit entry without an actor. Boolean confirmation fields typed `Literal[True]` also accept the JSON number `1`. A rare deadlock while a booking upgrades to an exclusive profile lock returns 500 instead of `SLOT_TAKEN`. Slot calculation is untested for zones with unusual DST rules such as `America/Nuuk`. To be fixed in M7.
 
 ## Phase 1 checklist
 
@@ -19,12 +19,18 @@ Single source of truth for where the project stands. The agent keeps this file u
 - [x] M3 — Data model and migrations
 - [x] M4 — Authentication and authorization
 - [x] M5 — Scheduling
-- [ ] M6 — Seed data
+- [x] M6 — Seed data
 - [ ] M7 — Tests
 
 ## Log
 
 Newest entries first.
+
+### 2026-11-20 — M6 finished
+- Added `make seed` (`python -m app.seed`): an admin, two psychologists, five services, 80 clients, about 840 appointments with status history and KVKK disclosures, built around the day it runs. ADR-005 documents the approach.
+- The rules that decide early and late cancellations, no-shows and dropout live in `app/seed/behavior.py`, for the Phase 5 no-show model to be judged against.
+- Owner decisions: the seed runs only in dev and only on a database without users; it writes no audit entries; dates follow the day it runs, with `--today` to rebuild another day.
+- Added dependency: `faker` (dev group only).
 
 ### 2026-11-20 — M5 finished
 - Added the catalog, client records, availability rules, time off, public profile and slots, client booking, cancellation and reschedule, staff appointments and status changes with history.
