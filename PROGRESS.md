@@ -30,7 +30,7 @@ Newest entries first.
 - Added the catalog, client records, availability rules, time off, public profile and slots, client booking, cancellation and reschedule, staff appointments and status changes with history.
 - Owner decisions: client search folds `I`, `ı`, `İ` and `i` into one letter, because the database collation does not follow Turkish case rules; admins see time off periods without their reason; client reschedules share the booking limit of 20 per session per hour.
 - Decisions: bookings lock the psychologist profile shared, or exclusive when a buffer is set (ADR-003); each reschedule writes one `appointments.rescheduled` audit entry; an inactive psychologist cannot be rescheduled to (`SLOT_UNAVAILABLE`); a date range whose end is before its start returns `DATE_RANGE_INVALID`.
-- Added dependency: `tzdata`.
+- Added dependency: `tzdata`. Profile timezones are checked against its list, because Linux also lists host files such as `localtime`; CI caught this.
 
 ### 2026-11-02 — M4 finished
 - Added registration, email verification, login, logout, sessions, password reset, TOTP 2FA with recovery codes, admin account actions, audit entries, CSRF protection, email delivery and `make create-admin`.
