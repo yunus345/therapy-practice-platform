@@ -42,6 +42,11 @@ router = APIRouter(tags=["scheduling"])
 ONE_MINUTE = 60
 ONE_HOUR = 3600
 
+# A reschedule books a new appointment, so both count against one limit.
+BOOKING_RATE_LIMIT = Depends(
+    RateLimit("appointments.book", 20, ONE_HOUR, key=session_rate_limit_key)
+)
+
 PublicSlug = Annotated[str, Path(max_length=100, pattern=NO_NUL_PATTERN)]
 
 
@@ -188,9 +193,7 @@ async def get_public_slots(
 @router.post(
     "/appointments",
     status_code=status.HTTP_201_CREATED,
-    dependencies=[
-        Depends(RateLimit("appointments.book", 20, ONE_HOUR, key=session_rate_limit_key))
-    ],
+    dependencies=[BOOKING_RATE_LIMIT],
 )
 async def book_appointment(
     body: BookAppointmentRequest,
@@ -228,7 +231,11 @@ async def cancel_own_appointment(
     return ClientAppointmentResponse.model_validate(appointment)
 
 
-@router.post("/appointments/{appointment_id}/reschedule", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/appointments/{appointment_id}/reschedule",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[BOOKING_RATE_LIMIT],
+)
 async def reschedule_own_appointment(
     appointment_id: uuid.UUID,
     body: RescheduleAppointmentRequest,

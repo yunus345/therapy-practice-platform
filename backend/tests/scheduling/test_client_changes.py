@@ -685,6 +685,15 @@ class TestWhereAMoveCanGo:
 
         assert response.status_code == 422
 
+    async def test_reschedules_count_against_the_booking_limit(
+        self, booker: Booker, booked: uuid.UUID
+    ) -> None:
+        # The booking was the first of 20 attempts; 08:00 is outside working hours.
+        responses = [await reschedule(booker, booked, local(8)) for _ in range(20)]
+
+        assert [response.status_code for response in responses] == [409] * 19 + [429]
+        assert error_code(responses[-1]) == "RATE_LIMITED"
+
 
 class TestRescheduleAtomicity:
     async def assert_nothing_happened(self, session: AsyncSession, old: uuid.UUID) -> None:
