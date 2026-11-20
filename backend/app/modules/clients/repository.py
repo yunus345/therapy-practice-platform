@@ -1,17 +1,37 @@
 import uuid
 from collections.abc import Collection, Sequence
 
-from sqlalchemy import ColumnElement, Row, Select, and_, func, or_, select
+from sqlalchemy import ColumnElement, Row, Select, Text, and_, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import QueryableAttribute
 
 from app.modules.clients.models import Client, PsychologistClient
 
 SEARCHED_COLUMNS = (Client.first_name, Client.last_name, Client.email, Client.phone)
 
+# Turkish has a dotted and a dotless i, and the database collation lowercases "I" to "i"
+# where Turkish expects the dotless one. Folding every form of the letter to "i" on both
+# sides lets a search match whichever form was typed or stored, at the cost of a word
+# with a dotless i also finding its dotted twin.
+DOTLESS_I = "\N{LATIN SMALL LETTER DOTLESS I}"
+DOTTED_CAPITAL_I = "\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}"
+I_FORMS = "I" + DOTLESS_I + DOTTED_CAPITAL_I
+I_FOLDED = "i" * len(I_FORMS)
+FOLD_I = str.maketrans(I_FORMS, I_FOLDED)
+
+
+def _fold(term: str) -> str:
+    return term.translate(FOLD_I).lower()
+
+
+def _folded(column: QueryableAttribute[str | None]) -> ColumnElement[str]:
+    return func.lower(func.translate(column, I_FORMS, I_FOLDED, type_=Text))
+
 
 def _matches(term: str) -> ColumnElement[bool]:
-    return or_(*(column.icontains(term, autoescape=True) for column in SEARCHED_COLUMNS))
+    folded = _fold(term)
+    return or_(*(_folded(column).contains(folded, autoescape=True) for column in SEARCHED_COLUMNS))
 
 
 def _visible(psychologist_id: uuid.UUID | None, terms: Sequence[str] = ()) -> Select[Client]:

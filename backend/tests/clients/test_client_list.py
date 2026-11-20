@@ -3,6 +3,7 @@ from typing import Any
 import httpx
 import pytest
 
+from app.modules.clients.repository import DOTLESS_I
 from app.modules.users.models import User, UserRole
 from tests.conftest import (
     DEFAULT_PASSWORD,
@@ -198,6 +199,33 @@ class TestSearch:
         response = await api.get("/staff/clients", params={"search": term})
 
         assert names(response) == ["Grace"]
+
+    @pytest.mark.parametrize(
+        ("stored", "term"),
+        [
+            ("IŞIK", f"{DOTLESS_I}ş{DOTLESS_I}k"),
+            (f"Iş{DOTLESS_I}k", "IŞIK"),
+            ("İpek", "ipek"),
+            ("ipek", "İPEK"),
+            (f"Çağr{DOTLESS_I} Öztürk", "ÇAĞRI"),
+            ("Ian", "ian"),
+            ("Ian", "IAN"),
+        ],
+    )
+    async def test_follows_turkish_case_rules(
+        self,
+        api: httpx.AsyncClient,
+        psychologist: User,
+        make_client_record: ClientRecordFactory,
+        stored: str,
+        term: str,
+    ) -> None:
+        await make_client_record(psychologist, first_name=stored)
+        await make_client_record(psychologist, first_name="Other")
+
+        response = await api.get("/staff/clients", params={"search": term})
+
+        assert names(response) == [stored]
 
     @pytest.mark.parametrize(
         ("search", "expected"),
