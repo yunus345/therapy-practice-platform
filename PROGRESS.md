@@ -5,12 +5,12 @@ Single source of truth for where the project stands. The agent keeps this file u
 ## Current status
 
 - **Phase:** 1 — Foundation and backend core
-- **Milestone:** M4 done, on branch `phase-1`
-- **Last updated:** 2026-11-02
-- **Next step:** M5 — Scheduling, after owner approval.
-- **Waiting on owner:** approval to start M5.
-- **Open questions:** none. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
-- **Known issues:** `make seed` exits with an error until M6. The in-memory rate limiter counts per process.
+- **Milestone:** M5 done, on branch `phase-1`
+- **Last updated:** 2026-11-20
+- **Next step:** M6 — Seed data, after owner approval.
+- **Waiting on owner:** approval to start M6.
+- **Open questions:** none. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered. The repository stays on the iCloud-synced Desktop for now; move it if sync causes trouble.
+- **Known issues:** `make seed` exits with an error until M6. The in-memory rate limiter counts per process. Restoring a soft-deleted client writes a `clients.updated` audit entry without an actor. Boolean confirmation fields typed `Literal[True]` also accept the JSON number `1`. A rare deadlock while a booking upgrades to an exclusive profile lock returns 500 instead of `SLOT_TAKEN`. Slot calculation is untested for zones with unusual DST rules such as `America/Nuuk`. To be fixed in M7.
 
 ## Phase 1 checklist
 
@@ -18,13 +18,19 @@ Single source of truth for where the project stands. The agent keeps this file u
 - [x] M2 — Core application skeleton
 - [x] M3 — Data model and migrations
 - [x] M4 — Authentication and authorization
-- [ ] M5 — Scheduling
+- [x] M5 — Scheduling
 - [ ] M6 — Seed data
 - [ ] M7 — Tests
 
 ## Log
 
 Newest entries first.
+
+### 2026-11-20 — M5 finished
+- Added the catalog, client records, availability rules, time off, public profile and slots, client booking, cancellation and reschedule, staff appointments and status changes with history.
+- Owner decisions: client search folds `I`, `ı`, `İ` and `i` into one letter, because the database collation does not follow Turkish case rules; admins see time off periods without their reason; client reschedules share the booking limit of 20 per session per hour.
+- Decisions: bookings lock the psychologist profile shared, or exclusive when a buffer is set (ADR-003); each reschedule writes one `appointments.rescheduled` audit entry; an inactive psychologist cannot be rescheduled to (`SLOT_UNAVAILABLE`); a date range whose end is before its start returns `DATE_RANGE_INVALID`.
+- Added dependency: `tzdata`.
 
 ### 2026-11-02 — M4 finished
 - Added registration, email verification, login, logout, sessions, password reset, TOTP 2FA with recovery codes, admin account actions, audit entries, CSRF protection, email delivery and `make create-admin`.

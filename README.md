@@ -41,6 +41,14 @@ Models live in each module's `models.py`. `CHECK` and `EXCLUDE` constraints and 
 - **Rejected requests:** an `AppError` with `keep_transaction = True` still commits, which keeps failed login counters and audit entries.
 - **Common passwords:** `app/core/data/common_passwords.txt` holds the entries of at least 10 characters from the NCSC top 100,000 list in [SecLists](https://github.com/danielmiessler/SecLists) (MIT).
 
+### Scheduling
+
+- **Catalog:** an admin defines therapy services and assigns them to psychologists, optionally with a custom price. `GET /staff/services` lists what a psychologist offers.
+- **Clients:** a psychologist registers clients and sees only those in their care. Ending care hides a client but keeps the psychologist's own past appointments. Admins can read clients but not change them. Search matches parts of names, email and phone, and treats every form of the Turkish i (`I`, `ı`, `İ`, `i`) as the same letter.
+- **Availability:** weekly rules and time off define when a psychologist works. Times are computed in the psychologist's timezone; `tzdata` ships the zone database. Admins see when a psychologist is away but not the reason.
+- **Booking:** `GET /public/psychologists/{slug}/slots` lists free slots without saying who booked the rest. A client with a verified email books with `POST /appointments`; staff book with `POST /staff/appointments` and may ignore working hours, notice and buffer, but never overlaps or time off. Bookings and client reschedules share one limit of 20 per session per hour.
+- **Changes:** status changes follow the state machine in `scheduling/state_machine.py` and are written to `appointment_status_history`. A client may cancel or reschedule once, until the psychologist's cancellation window closes.
+
 ## Local setup
 
 You need Docker, [uv](https://docs.astral.sh/uv/) and make.
