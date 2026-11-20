@@ -1,7 +1,8 @@
 import uuid
 from functools import cache
+from importlib import resources
 from typing import Annotated
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 from pydantic_core import PydanticCustomError
@@ -17,7 +18,10 @@ MAX_POLICY_DAYS = 3_650
 
 @cache
 def _known_timezones() -> frozenset[str]:
-    return frozenset(available_timezones())
+    # The IANA names that `tzdata` ships, the same on every platform. The system zone
+    # directory also holds files such as `localtime`, which follow the host's settings.
+    zones = resources.files("tzdata").joinpath("zones").read_text(encoding="utf-8")
+    return frozenset(zones.split())
 
 
 def _zone_loads(key: str) -> bool:
