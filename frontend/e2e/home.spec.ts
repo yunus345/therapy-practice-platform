@@ -26,7 +26,16 @@ test("protects the own appointments route", async ({ page }) => {
   await expect(page).toHaveURL(/\/giris(?:\?|$)/, { timeout: 15_000 });
 });
 
-test("loads a public psychologist route", async ({ page }) => {
+// These two read data from the backend, so they fail if the API or the seed is missing.
+test("shows a seeded psychologist from the backend", async ({ page }) => {
   await page.goto("/psikolog/elif-aydin");
-  await expect(page.locator("body")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Elif Aydın" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hizmetler" })).toBeVisible();
+});
+
+test("reports an unknown psychologist", async ({ page }) => {
+  await page.goto("/psikolog/no-such-psychologist");
+  await expect(page.getByText("Psikolog profili bulunamadı.")).toBeVisible();
 });

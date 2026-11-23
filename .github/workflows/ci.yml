@@ -102,3 +102,71 @@ jobs:
         run: make migrate
       - name: Test
         run: make backend-test
+
+  e2e:
+    # Playwright against the real backend and a seeded database.
+    runs-on: ubuntu-24.04
+    env:
+      PNPM: pnpm
+      POSTGRES_USER: seans_owner
+      POSTGRES_PASSWORD: ci-owner-password
+      POSTGRES_DB: seans
+      POSTGRES_TEST_DB: seans_test
+      APP_DB_USER: seans_app
+      APP_DB_PASSWORD: ci-app-password
+      # dev: the seed refuses to run anywhere else. CI-only secrets, never used elsewhere.
+      ENVIRONMENT: dev
+      DATABASE_URL: postgresql+asyncpg://seans_app:ci-app-password@localhost:5432/seans
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://seans_owner:ci-owner-password@localhost:5432/seans
+      CSRF_SECRET: ci-only-csrf-secret-not-used-anywhere-else
+      TOTP_ENCRYPTION_KEY: ci-only-totp-key-not-used-anywhere-else
+      FRONTEND_ORIGIN: http://localhost:3000
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: seans_owner
+          POSTGRES_PASSWORD: ci-owner-password
+          POSTGRES_DB: seans
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U seans_owner -d seans"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --frozen
+      - name: Create database roles
+        run: ./docker/postgres/init/01-roles-and-databases.sh
+        env:
+          PGHOST: localhost
+          PGPASSWORD: ci-owner-password
+      - name: Migrate and seed
+        run: make migrate seed
+      - uses: pnpm/action-setup@v4.4.0
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5.0.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        run: make frontend-install
+      - name: Install Chromium for Playwright
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
+      - name: End-to-end tests
+        # Playwright starts the backend and the built frontend itself.
+        run: make frontend-e2e
