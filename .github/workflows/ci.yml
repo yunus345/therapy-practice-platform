@@ -22,25 +22,25 @@ jobs:
 
   frontend:
     runs-on: ubuntu-24.04
+    env:
+      PNPM: pnpm
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: pnpm/action-setup@v4
+      # Reads the pnpm version from "packageManager" in frontend/package.json.
+      - uses: pnpm/action-setup@v4.4.0
         with:
-          version: 10.24.0
-      - uses: actions/setup-node@v5
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5.0.0
         with:
-          node-version: 24
+          node-version-file: frontend/.nvmrc
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - name: Install dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-      - name: Lint and format
-        working-directory: frontend
-        run: pnpm lint && pnpm format:check
+        run: make frontend-install
+      - name: Lint, format and type check
+        run: make frontend-lint
       - name: Unit tests
-        working-directory: frontend
-        run: pnpm test
+        run: make frontend-test
       - name: Build
         working-directory: frontend
         run: pnpm build
