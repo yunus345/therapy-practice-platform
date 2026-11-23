@@ -138,7 +138,7 @@ class TestCreate:
         )
         assert version == "2.5"
 
-    @pytest.mark.parametrize("given", [False, None, "true", "yes", 0])
+    @pytest.mark.parametrize("given", [False, None, "true", "yes", 0, 1])
     async def test_refuses_a_client_without_the_disclosure(
         self,
         api: httpx.AsyncClient,

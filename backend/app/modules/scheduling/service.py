@@ -62,7 +62,11 @@ from app.modules.scheduling.slots import (
 from app.modules.scheduling.state_machine import ensure_transition_allowed
 from app.modules.users.actor import STAFF_ROLES, Actor
 from app.modules.users.models import PsychologistProfile, UserRole
-from app.modules.users.service import UserService, build_user_service
+from app.modules.users.service import (
+    ProfileLockConflictError,
+    UserService,
+    build_user_service,
+)
 
 RULE_ENTITY = "availability_rule"
 TIME_OFF_ENTITY = "time_off"
@@ -760,11 +764,14 @@ class SchedulingService:
         psychologist_id = profile.user_id
         # Read first: the same object changes if the lock finds a newer version of the row.
         exclusive = profile.buffer_minutes > 0
-        locked = await self._users.lock_profile(psychologist_id, exclusive=exclusive)
-        if locked.buffer_minutes > 0 and not exclusive:
-            # The buffer was set while this request waited for its shared lock.
-            return await self._users.lock_profile(psychologist_id, exclusive=True)
-        return locked
+        try:
+            locked = await self._users.lock_profile(psychologist_id, exclusive=exclusive)
+            if locked.buffer_minutes > 0 and not exclusive:
+                # The buffer was set while this request waited for its shared lock.
+                return await self._users.lock_profile(psychologist_id, exclusive=True)
+            return locked
+        except ProfileLockConflictError as error:
+            raise SlotTakenError from error
 
     async def _lock_for_client_change(
         self, client: Client, appointment_id: uuid.UUID
@@ -887,7 +894,7 @@ class SchedulingService:
         if not await self._repository.insert_appointment(appointment):
             raise SlotTakenError
         await self._clients.ensure_care_relationship(
-            appointment.psychologist_id, appointment.client_id
+            appointment.psychologist_id, appointment.client_id, actor.user_id
         )
         await self._add_history(appointment, None, actor, reason, self._clock())
 

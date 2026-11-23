@@ -119,7 +119,7 @@ class TestEnsureCareRelationship:
     ) -> None:
         record = await make_client_record(colleague)
 
-        await clients.ensure_care_relationship(therapist.id, record.id)
+        await clients.ensure_care_relationship(therapist.id, record.id, therapist.id)
 
         assert (await load_relationship(db_session, therapist, record)).ended_at is None
 
@@ -132,7 +132,7 @@ class TestEnsureCareRelationship:
     ) -> None:
         record = await make_client_record(therapist)
 
-        await clients.ensure_care_relationship(therapist.id, record.id)
+        await clients.ensure_care_relationship(therapist.id, record.id, therapist.id)
 
         assert (await load_relationship(db_session, therapist, record)).ended_at is None
 
@@ -166,12 +166,12 @@ class TestEnsureCareRelationship:
         relationship.ended_at = clock.now
         await db_session.commit()
 
-        await clients.ensure_care_relationship(therapist.id, record.id)
+        await clients.ensure_care_relationship(therapist.id, record.id, therapist.id)
 
         assert (await load_client(db_session, record)).deleted_at is None
         assert (await load_relationship(db_session, therapist, record)).ended_at is None
         [entry] = await audit_entries(db_session, AuditAction.CLIENT_UPDATED)
-        assert entry.actor_user_id is None
+        assert entry.actor_user_id == therapist.id
         assert entry.entity_type == "client"
         assert entry.entity_id == record.id
         assert entry.event_metadata == {"changed_fields": ["deleted_at"]}

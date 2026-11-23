@@ -1,12 +1,28 @@
 import uuid
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, StringConstraints
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    StrictBool,
+    StringConstraints,
+)
 
 from app.core.schemas import NO_NUL_PATTERN, PatchModel, PersonName, Phone
 
 ClientSearch = Annotated[str, StringConstraints(max_length=100, pattern=NO_NUL_PATTERN)]
+
+
+def require_true(value: bool) -> bool:
+    if value is not True:
+        raise ValueError("must be true")
+    return value
+
+
+StrictTrue = Annotated[StrictBool, AfterValidator(require_true)]
 
 
 class CreateClientRequest(BaseModel):
@@ -15,7 +31,7 @@ class CreateClientRequest(BaseModel):
     phone: Phone
     email: EmailStr | None = None
     birth_date: date | None = None
-    kvkk_disclosure_given: Literal[True]
+    kvkk_disclosure_given: StrictTrue
 
 
 class UpdateClientRequest(PatchModel):

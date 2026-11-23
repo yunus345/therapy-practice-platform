@@ -186,7 +186,10 @@ class ClientService:
         return await self._repository.get_by_user(user_id)
 
     async def ensure_care_relationship(
-        self, psychologist_id: uuid.UUID, client_id: uuid.UUID
+        self,
+        psychologist_id: uuid.UUID,
+        client_id: uuid.UUID,
+        actor_user_id: uuid.UUID | None = None,
     ) -> None:
         """Open or reopen a care relationship, and restore a client that was soft-deleted.
 
@@ -204,7 +207,7 @@ class ClientService:
             # No actor here: the caller's entry for the appointment names who booked.
             await self._audit.record(
                 AuditAction.CLIENT_UPDATED,
-                actor_user_id=None,
+                actor_user_id=actor_user_id,
                 entity_type=CLIENT_ENTITY,
                 entity_id=client_id,
                 metadata={"changed_fields": ["deleted_at"]},

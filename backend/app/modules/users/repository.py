@@ -4,10 +4,19 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import case, func, select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.users.models import PsychologistProfile, User, UserRole
+
+DEADLOCK_DETECTED = "40P01"
+
+
+class ProfileLockConflict:
+    pass
+
+
+PROFILE_LOCK_CONFLICT = ProfileLockConflict()
 
 
 class UserRepository:
@@ -67,14 +76,22 @@ class UserRepository:
         )
         return result.all()
 
-    async def lock_profile(self, user_id: uuid.UUID, exclusive: bool) -> PsychologistProfile | None:
+    async def lock_profile(
+        self, user_id: uuid.UUID, exclusive: bool
+    ) -> PsychologistProfile | ProfileLockConflict | None:
         """Take the lock that serializes schedule changes and read the row under it."""
-        return await self._session.scalar(
-            select(PsychologistProfile)
-            .where(PsychologistProfile.user_id == user_id)
-            .with_for_update(read=not exclusive)
-            .execution_options(populate_existing=True)
-        )
+        try:
+            async with self._session.begin_nested():
+                return await self._session.scalar(
+                    select(PsychologistProfile)
+                    .where(PsychologistProfile.user_id == user_id)
+                    .with_for_update(read=not exclusive)
+                    .execution_options(populate_existing=True)
+                )
+        except DBAPIError as error:
+            if getattr(error.orig, "sqlstate", None) == DEADLOCK_DETECTED:
+                return PROFILE_LOCK_CONFLICT
+            raise
 
     async def slug_exists(self, slug: str) -> bool:
         statement = select(PsychologistProfile.user_id).where(PsychologistProfile.slug == slug)

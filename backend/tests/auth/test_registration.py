@@ -52,8 +52,9 @@ async def test_register_creates_user_client_consent_and_sends_email(
     assert [email.template for email in mailer.sent] == [EmailTemplate.VERIFY_EMAIL]
 
 
-async def test_register_requires_kvkk_acceptance(api: httpx.AsyncClient) -> None:
-    response = await api.post("/auth/register", json=registration(kvkk_accepted=False))
+@pytest.mark.parametrize("given", [False, 0, 1, "true"])
+async def test_register_requires_kvkk_acceptance(api: httpx.AsyncClient, given: object) -> None:
+    response = await api.post("/auth/register", json=registration(kvkk_accepted=given))
 
     assert response.status_code == 422
 
