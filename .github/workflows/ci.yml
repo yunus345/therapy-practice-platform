@@ -1,0 +1,181 @@
+name: CI
+
+# Pushes to main and pull requests, so that a pull request runs once and not twice.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Reject sync-conflict copies
+        # iCloud and Finder create copies named "name 2" or "name 2.ext".
+        run: |
+          if git ls-files -z | tr '\0' '\n' | grep -E '(^|/)[^/]* 2(\.[^/]+)?(/|$)'; then
+            echo "File or folder names ending in ' 2' are sync-conflict copies; remove them."
+            exit 1
+          fi
+
+  frontend:
+    runs-on: ubuntu-24.04
+    env:
+      PNPM: pnpm
+    steps:
+      - uses: actions/checkout@v7.0.1
+      # Reads the pnpm version from "packageManager" in frontend/package.json.
+      - uses: pnpm/action-setup@v4.4.0
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5.0.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        run: make frontend-install
+      - name: Lint, format and type check
+        run: make frontend-lint
+      - name: API types match the committed OpenAPI schema
+        run: |
+          (cd frontend && pnpm api-types)
+          git diff --exit-code -- frontend/src/lib/api-schema.ts
+      - name: Unit tests
+        run: make frontend-test
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
+
+  backend:
+    runs-on: ubuntu-24.04
+    env:
+      POSTGRES_USER: seans_owner
+      POSTGRES_PASSWORD: ci-owner-password
+      POSTGRES_DB: seans
+      POSTGRES_TEST_DB: seans_test
+      APP_DB_USER: seans_app
+      APP_DB_PASSWORD: ci-app-password
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql+asyncpg://seans_app:ci-app-password@localhost:5432/seans
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://seans_owner:ci-owner-password@localhost:5432/seans
+      TEST_DATABASE_URL: postgresql+asyncpg://seans_app:ci-app-password@localhost:5432/seans_test
+      CSRF_SECRET: ci-only-csrf-secret-not-used-anywhere-else
+      TOTP_ENCRYPTION_KEY: ci-only-totp-key-not-used-anywhere-else
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: seans_owner
+          POSTGRES_PASSWORD: ci-owner-password
+          POSTGRES_DB: seans
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U seans_owner -d seans"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --frozen
+      - name: Create database roles
+        run: ./docker/postgres/init/01-roles-and-databases.sh
+        env:
+          PGHOST: localhost
+          PGPASSWORD: ci-owner-password
+      - name: Lint and type check
+        run: make backend-lint
+      - name: Committed OpenAPI schema is up to date
+        run: |
+          (cd backend && uv run python -m app.openapi ../frontend/openapi.json)
+          git diff --exit-code -- frontend/openapi.json
+      - name: Apply migrations
+        run: make migrate
+      - name: Test
+        run: make backend-test
+
+  e2e:
+    # Playwright against the real backend and a seeded database.
+    runs-on: ubuntu-24.04
+    env:
+      PNPM: pnpm
+      POSTGRES_USER: seans_owner
+      POSTGRES_PASSWORD: ci-owner-password
+      POSTGRES_DB: seans
+      POSTGRES_TEST_DB: seans_test
+      APP_DB_USER: seans_app
+      APP_DB_PASSWORD: ci-app-password
+      # dev: the seed refuses to run anywhere else. CI-only secrets, never used elsewhere.
+      ENVIRONMENT: dev
+      DATABASE_URL: postgresql+asyncpg://seans_app:ci-app-password@localhost:5432/seans
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://seans_owner:ci-owner-password@localhost:5432/seans
+      CSRF_SECRET: ci-only-csrf-secret-not-used-anywhere-else
+      TOTP_ENCRYPTION_KEY: ci-only-totp-key-not-used-anywhere-else
+      FRONTEND_ORIGIN: http://localhost:3000
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: seans_owner
+          POSTGRES_PASSWORD: ci-owner-password
+          POSTGRES_DB: seans
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U seans_owner -d seans"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --frozen
+      - name: Create database roles
+        run: ./docker/postgres/init/01-roles-and-databases.sh
+        env:
+          PGHOST: localhost
+          PGPASSWORD: ci-owner-password
+      - name: Migrate and seed
+        run: make migrate seed
+      - uses: pnpm/action-setup@v4.4.0
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v5.0.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        run: make frontend-install
+      - name: Install Chromium for Playwright
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Build
+        working-directory: frontend
+        run: pnpm build
+      - name: End-to-end tests
+        # Playwright starts the backend and the built frontend itself.
+        run: make frontend-e2e
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

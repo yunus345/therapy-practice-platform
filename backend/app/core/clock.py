@@ -1,0 +1,10 @@
+"""Injectable time source, so that expiry logic can be tested."""
+
+from collections.abc import Callable
+from datetime import UTC, datetime
+
+Clock = Callable[[], datetime]
+
+
+def utcnow() -> datetime:
+    return datetime.now(UTC)

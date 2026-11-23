@@ -22,6 +22,8 @@
       "Bash(docker system prune *)",
       "Bash(dropdb *)",
       "Edit(./CLAUDE.md)",
+      "Edit(./AGENTS.md)",
+      "Edit(./.github/copilot-instructions.md)",
       "Edit(./docs/phases/**)",
       "Edit(./.claude/settings.json)"
     ]
