@@ -107,8 +107,9 @@ cd backend && uv run pre-commit install
 | `make frontend-dev` | Run the frontend in dev mode |
 | `make frontend-test`, `make frontend-lint` | Frontend only |
 | `make frontend-e2e` | Run the Playwright tests |
+| `make api-types` | Regenerate `frontend/openapi.json` and the frontend API types after an API change |
 
-`make help` lists every target. `make up` must be running before `make test`, because backend tests use a real PostgreSQL database.
+`make help` lists every target. The frontend never declares API types by hand: they come from `frontend/src/lib/api-schema.ts`, which `make api-types` generates and CI checks. `make up` must be running before `make test`, because backend tests use a real PostgreSQL database.
 
 ## Configuration
 

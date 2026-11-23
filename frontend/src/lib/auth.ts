@@ -1,33 +1,15 @@
 import { apiFetch } from "./api";
+import type { components } from "./api-schema";
 
-export type UserRole = "admin" | "psychologist" | "client";
+type Schemas = components["schemas"];
 
-export type SessionState = {
-  csrf_token: string;
-  mfa_required: boolean;
-  two_factor_setup_required: boolean;
-};
-
-export type Me = {
-  id: string;
-  email: string;
-  role: UserRole;
-  email_verified: boolean;
-  totp_enabled: boolean;
-  mfa_required: boolean;
-  two_factor_setup_required: boolean;
-};
-
-export type Accepted = { status: "accepted" };
-export type AuthSession = {
-  id: string;
-  created_at: string;
-  last_seen_at: string;
-  expires_at: string;
-  ip_address: string | null;
-  user_agent: string | null;
-  is_current: boolean;
-};
+export type UserRole = Schemas["UserRole"];
+export type SessionState = Schemas["SessionStateResponse"];
+export type Me = Schemas["MeResponse"];
+export type Accepted = Schemas["AcceptedResponse"];
+export type AuthSession = Schemas["SessionResponse"];
+export type TwoFactorSetup = Schemas["TwoFactorSetupResponse"];
+export type TwoFactorEnabled = Schemas["TwoFactorEnabledResponse"];
 
 export function getMe() {
   return apiFetch<Me>("/auth/me");
@@ -80,7 +62,7 @@ export function verifyEmail(token: string) {
 }
 
 export function startTwoFactorSetup() {
-  return apiFetch<{ provisioning_uri: string }>("/auth/2fa/setup", {
+  return apiFetch<TwoFactorSetup>("/auth/2fa/setup", {
     method: "POST",
   });
 }
@@ -96,13 +78,10 @@ export function verifyTwoFactor(code?: string, recovery_code?: string) {
 }
 
 export function enableTwoFactor(code: string) {
-  return apiFetch<SessionState & { recovery_codes: string[] }>(
-    "/auth/2fa/enable",
-    {
-      method: "POST",
-      body: JSON.stringify({ code }),
-    },
-  );
+  return apiFetch<TwoFactorEnabled>("/auth/2fa/enable", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
 }
 
 export function listSessions() {

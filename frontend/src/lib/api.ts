@@ -1,3 +1,5 @@
+import type { components } from "./api-schema";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 let csrfToken: string | null = null;
@@ -8,7 +10,7 @@ export async function ensureCsrfToken(): Promise<string> {
     credentials: "include",
   });
   if (!response.ok) throw new ApiError(response.status);
-  const body = (await response.json()) as { csrf_token: string };
+  const body = (await response.json()) as components["schemas"]["CsrfResponse"];
   csrfToken = body.csrf_token;
   return csrfToken;
 }
@@ -46,9 +48,10 @@ export async function apiFetch<T>(
   });
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as {
-      error?: { code?: string; message?: string };
-    } | null;
+    // Not trusted to match the schema: a proxy in between may answer instead.
+    const body = (await response.json().catch(() => null)) as Partial<
+      components["schemas"]["ErrorResponse"]
+    > | null;
     throw new ApiError(response.status, body?.error?.code);
   }
 

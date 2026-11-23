@@ -16,7 +16,8 @@
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "api-types": "openapi-typescript openapi.json -o src/lib/api-schema.ts --enum-values"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -44,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "jsdom": "^31.0.1",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.10.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5",

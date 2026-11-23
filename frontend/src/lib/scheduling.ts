@@ -1,62 +1,15 @@
 import { apiFetch } from "./api";
+import type { components } from "./api-schema";
 
-export type DeliveryMode = "in_person" | "online";
+type Schemas = components["schemas"];
 
-export type OfferedService = {
-  id: string;
-  name: string;
-  description: string | null;
-  duration_minutes: number;
-  price_amount: string;
-  currency: string;
-  delivery_mode: DeliveryMode;
-};
-
-export type PublicProfile = {
-  first_name: string;
-  last_name: string;
-  title: string | null;
-  slug: string;
-  bio: string | null;
-  timezone: string;
-  cancellation_window_hours: number;
-  services: OfferedService[];
-};
-
-export type Slot = {
-  starts_at: string;
-  ends_at: string;
-};
-
-export type Slots = {
-  timezone: string;
-  slots: Slot[];
-};
-
-export type ClientAppointment = {
-  id: string;
-  psychologist_name: string;
-  psychologist_slug: string;
-  service_name: string;
-  delivery_mode: DeliveryMode;
-  starts_at: string;
-  ends_at: string;
-  timezone: string;
-  status: string;
-  price_amount: string;
-  currency: string;
-  rescheduled_from_id: string | null;
-  cancelled_at: string | null;
-  cancellation_reason: string | null;
-  created_at: string;
-};
-
-export type AppointmentPage = {
-  items: ClientAppointment[];
-  total: number;
-  limit: number;
-  offset: number;
-};
+export type DeliveryMode = Schemas["DeliveryMode"];
+export type OfferedService = Schemas["OfferedServiceResponse"];
+export type PublicProfile = Schemas["PublicProfileResponse"];
+export type Slot = Schemas["SlotResponse"];
+export type Slots = Schemas["SlotsResponse"];
+export type ClientAppointment = Schemas["ClientAppointmentResponse"];
+export type AppointmentPage = Schemas["Page_ClientAppointmentResponse_"];
 
 export function getPublicProfile(slug: string) {
   return apiFetch<PublicProfile>(

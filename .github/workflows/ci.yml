@@ -39,6 +39,10 @@ jobs:
         run: make frontend-install
       - name: Lint, format and type check
         run: make frontend-lint
+      - name: API types match the committed OpenAPI schema
+        run: |
+          (cd frontend && pnpm api-types)
+          git diff --exit-code -- frontend/src/lib/api-schema.ts
       - name: Unit tests
         run: make frontend-test
       - name: Build
@@ -90,6 +94,10 @@ jobs:
           PGPASSWORD: ci-owner-password
       - name: Lint and type check
         run: make backend-lint
+      - name: Committed OpenAPI schema is up to date
+        run: |
+          (cd backend && uv run python -m app.openapi ../frontend/openapi.json)
+          git diff --exit-code -- frontend/openapi.json
       - name: Apply migrations
         run: make migrate
       - name: Test

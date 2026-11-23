@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down dev migrate seed create-admin test lint fmt \
+.PHONY: help up down dev migrate seed create-admin test lint fmt api-types \
 	backend-test backend-lint \
 	frontend-install frontend-dev frontend-test frontend-e2e frontend-lint
 
@@ -41,6 +41,10 @@ fmt: ## Format code
 	$(BACKEND) ruff check --fix .
 	$(BACKEND) ruff format .
 	$(FRONTEND) format
+
+api-types: ## Regenerate frontend/openapi.json and the frontend API types from the backend
+	$(BACKEND) python -m app.openapi ../frontend/openapi.json
+	$(FRONTEND) api-types
 
 backend-test: ## Run backend tests against the test database
 	$(BACKEND) pytest --cov --cov-report=term-missing
