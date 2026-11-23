@@ -9,7 +9,9 @@ from pydantic import (
     AwareDatetime,
     BaseModel,
     Field,
+    StrictBool,
     StringConstraints,
+    WithJsonSchema,
     model_validator,
 )
 from pydantic_core import InitErrorDetails, PydanticCustomError, ValidationError
@@ -36,6 +38,12 @@ def _round_to_cents(value: Decimal) -> Decimal:
     return value.quantize(CENT)
 
 
+def require_true(value: bool) -> bool:
+    if value is not True:
+        raise ValueError("must be true")
+    return value
+
+
 def _normalize_to_utc(value: datetime) -> datetime:
     if not EARLIEST_DATETIME <= value <= LATEST_DATETIME:
         raise PydanticCustomError("datetime_out_of_range", "This date is out of range.")
@@ -50,6 +58,12 @@ Money = Annotated[
 CurrencyCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
 ProfileSlug = Annotated[str, StringConstraints(max_length=100, pattern=r"^[a-z0-9]+(-[a-z0-9]+)*$")]
 UtcDatetime = Annotated[AwareDatetime, AfterValidator(_normalize_to_utc)]
+# A confirmation that must be the JSON value true. `Literal[True]` would also accept 1.
+StrictTrue = Annotated[
+    StrictBool,
+    AfterValidator(require_true),
+    WithJsonSchema({"type": "boolean", "const": True}),
+]
 
 
 class PatchModel(BaseModel):

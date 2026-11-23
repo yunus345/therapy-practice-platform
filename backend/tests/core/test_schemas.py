@@ -12,6 +12,7 @@ from app.core.schemas import (
     PersonName,
     Phone,
     ProfileSlug,
+    StrictTrue,
     UtcDatetime,
     bounded_text,
 )
@@ -203,3 +204,18 @@ class TestUtcDatetime:
             self.adapter.validate_python(value)
 
         assert error.value.errors()[0]["type"] == "datetime_out_of_range"
+
+
+class TestStrictTrue:
+    adapter: TypeAdapter[bool] = TypeAdapter(StrictTrue)
+
+    def test_accepts_true(self) -> None:
+        assert self.adapter.validate_json("true") is True
+
+    @pytest.mark.parametrize("given", ["false", "1", "0", '"true"', "null"])
+    def test_rejects_anything_but_true(self, given: str) -> None:
+        with pytest.raises(ValidationError):
+            self.adapter.validate_json(given)
+
+    def test_documents_the_constant(self) -> None:
+        assert self.adapter.json_schema() == {"type": "boolean", "const": True}

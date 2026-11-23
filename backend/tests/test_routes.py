@@ -72,3 +72,16 @@ async def test_every_route_is_in_the_api_document(
     paths = (await client.get("/openapi.json")).json()["paths"]
 
     assert method.lower() in paths[f"/api/v1{path}"]
+
+
+@pytest.mark.parametrize(
+    ("schema", "field"),
+    [("RegisterRequest", "kvkk_accepted"), ("CreateClientRequest", "kvkk_disclosure_given")],
+)
+async def test_kvkk_confirmations_are_documented_as_true(
+    client: httpx.AsyncClient, schema: str, field: str
+) -> None:
+    schemas = (await client.get("/openapi.json")).json()["components"]["schemas"]
+
+    documented = schemas[schema]["properties"][field]
+    assert (documented["type"], documented["const"]) == ("boolean", True)

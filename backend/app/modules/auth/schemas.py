@@ -1,21 +1,12 @@
 import uuid
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Literal
 
-from pydantic import AfterValidator, BaseModel, EmailStr, Field, StrictBool
+from pydantic import BaseModel, EmailStr, Field
 
-from app.core.schemas import PersonName, Phone
+from app.core.schemas import PersonName, Phone, StrictTrue
 from app.modules.auth.passwords import MAX_PASSWORD_LENGTH
 from app.modules.users.models import UserRole
-
-
-def require_true(value: bool) -> bool:
-    if value is not True:
-        raise ValueError("must be true")
-    return value
-
-
-StrictTrue = Annotated[StrictBool, AfterValidator(require_true)]
 
 
 class RegisterRequest(BaseModel):
