@@ -204,7 +204,8 @@ class ClientService:
         if client.deleted_at is not None:
             client.deleted_at = None
             await self._repository.flush()
-            # No actor here: the caller's entry for the appointment names who booked.
+            # The actor is whoever booked: the client for an online booking, the
+            # psychologist for a staff booking.
             await self._audit.record(
                 AuditAction.CLIENT_UPDATED,
                 actor_user_id=actor_user_id,

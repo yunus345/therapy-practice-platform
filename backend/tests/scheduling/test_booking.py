@@ -310,6 +310,9 @@ class TestCareRelationship:
         assert response.status_code == 201
         await db_session.refresh(booker.record)
         assert booker.record.deleted_at is None
+        # An online booking is made by the client, so the client is the actor.
+        [entry] = await audit_entries(db_session, AuditAction.CLIENT_UPDATED)
+        assert entry.actor_user_id == booker.user.id
 
     async def test_a_refused_booking_opens_nothing(
         self,

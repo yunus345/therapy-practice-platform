@@ -68,7 +68,7 @@ Newest entries first.
 
 ### 2026-11-21 — M7 finished
 - Added strict boolean validation for KVKK confirmation fields, so JSON `1` is rejected; both registration and staff client creation are covered.
-- Restored soft-deleted clients now write `clients.updated` with the acting psychologist's user ID instead of no actor.
+- Restored soft-deleted clients now write `clients.updated` with the booking actor instead of no actor: the client for an online booking, the psychologist for a staff booking. (Corrected in Phase 2 M0; this entry first said the acting psychologist.)
 - Profile lock deadlocks are contained by savepoints and returned as `SLOT_TAKEN` through the booking flow.
 - PostgreSQL test suite: 1656 passed; total coverage 98%. `make lint` passes with no warnings.
 - Migration upgrade/downgrade tests pass. `/docs` returns 200 and `/api/v1/health` returns `{"status":"ok"}`.

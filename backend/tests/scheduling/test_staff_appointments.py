@@ -545,6 +545,8 @@ class TestCreate:
         assert relationship.ended_at is None
         await db_session.refresh(record)
         assert record.deleted_at is None
+        [entry] = await audit_entries(db_session, AuditAction.CLIENT_UPDATED)
+        assert entry.actor_user_id == therapist.id
 
     async def test_a_service_they_do_not_offer_is_not_found(
         self,
