@@ -12,8 +12,9 @@ corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
 
-The application runs at `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE_URL` to
-the FastAPI origin; the default is `http://localhost:8000`.
+The application runs at `http://localhost:3000`. Frontend settings are documented in
+[`.env.example`](.env.example); copy it to `.env.local` to change them. Without it,
+`NEXT_PUBLIC_API_BASE_URL` defaults to `http://localhost:8000`.
 
 ## Validation
 
