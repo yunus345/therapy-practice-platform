@@ -5,12 +5,16 @@ Single source of truth for where the project stands. Every agent keeps this file
 ## Current status
 
 - **Phase:** 2 — Public website and psychologist panel (spec rewritten by the owner on 2026-11-23)
-- **Milestone:** M0 — Stabilization, not started. Work so far is on branch `phase-1`; the last commit is Phase 1 M6, and Phase 1 M7 plus the earlier Phase 2 M1–M3 are still uncommitted.
+- **Milestone:** M0 — Stabilization. All code and docs work is done and committed locally on branch `phase-1`; pushing, a green CI run and bringing the work to `main` are still open.
 - **Last updated:** 2026-11-23
-- **Next step:** Read the new `docs/phases/phase-2.md`, list questions and present the M0 plan. The owner moves the repository out of iCloud first.
-- **Waiting on owner:** moving the repository to `~/Projeler/therapy-practice-platform`; approval of the M0 plan.
-- **Open questions:** none yet for the new spec. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
-- **Known issues:** see the 2026-11-23 audit entry below. The in-memory rate limiter counts per process.
+- **Next step:** with the owner's approval, push `phase-1` and confirm CI is green (hygiene, frontend, backend, e2e). Then bring the work to `main` (proposal: a pull request from `phase-1`), with the owner's approval.
+- **Waiting on owner:** approval to push `phase-1`; approval of how to merge into `main`; approval of the branch workflow proposed below.
+- **Open questions:**
+  - Proposed workflow after `main` has the work: one branch per milestone (`phase-2/m1-booking-without-accounts` and so on), each merged into `main` through a pull request once CI is green and the owner approves. No direct commits to `main`.
+  - `pnpm/action-setup` and `actions/setup-node` are pinned to the latest release of their current majors (v4.4.0, v5.0.0). Newer majors exist (v6.1.1, v7.1.0); upgrading needs approval.
+  - Playwright reports are only printed in CI. Uploading them as an artifact would add `actions/upload-artifact`; needs approval.
+  - Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
+- **Known issues:** the in-memory rate limiter counts per process. Hardcoded Turkish strings and wrong error-code use on screens remain until M1 (out of M0 scope by the spec). The first Phase 2 frontend commit does not build on its own (noted in its message).
 
 ## Phase 1 checklist
 
@@ -20,7 +24,7 @@ Single source of truth for where the project stands. Every agent keeps this file
 - [x] M4 — Authentication and authorization
 - [x] M5 — Scheduling
 - [x] M6 — Seed data
-- [x] M7 — Tests (still uncommitted; committed in Phase 2 M0)
+- [x] M7 — Tests (committed in Phase 2 M0)
 
 ## Phase 2 checklist
 
@@ -37,6 +41,16 @@ Done under the earlier, agent-written spec and partly superseded: frontend found
 ## Log
 
 Newest entries first.
+
+### 2026-11-23 — Phase 2 M0 work committed (push pending)
+- Repository moved out of iCloud; environments rebuilt (`uv sync`, clean pnpm install); iCloud copies deleted. A pre-commit hook and a CI job reject names ending in ` 2`.
+- Committed the earlier work as it was: Phase 1 M7, then the old Phase 2 M1, M2 and M3, then the owner's spec and agent rules.
+- Profile locking: online bookings always lock `FOR UPDATE`, so no lock is upgraded and the deadlock path, its marker object and `PROFILE_LOCK_CONFLICT` are gone. ADR-003 records the trade-off (online bookings of one psychologist run one after another). A committed-transaction test covers it.
+- `StrictTrue` moved to `app/core/schemas.py`; the OpenAPI schema shows `const: true` again. The M7 log entry and a code comment were corrected: the audit actor of a restore is whoever booked; both booking paths now test it.
+- Error-code contract: backend `ErrorCode` enum documented on every route; generated frontend types (`openapi-typescript`, `make api-types`, CI checks both generated files); Turkish messages for every code in `messages/tr.json`, checked both ways by a Vitest test.
+- Tooling: Node 26.10.0 pinned (`.nvmrc`, `engines`, engine-strict), pnpm 10.24.0 through Corepack; `make help` lists hyphenated targets; new `typecheck`; CI actions pinned; Playwright runs in CI against the real backend and a seeded database. `NEXT_PUBLIC_API_BASE_URL` moved to `frontend/.env.example`.
+- Dependencies: added `openapi-typescript` (dev); removed `clsx`, `tailwind-merge`, `@testing-library/react`, `eslint-config-prettier`; kept `cn` (shadcn/ui's helper), which the owner corrected in the spec.
+- Checks: `make lint` passes; `make test` passes with 1673 backend tests (98% coverage) and 7 frontend tests; 5 Playwright tests pass locally in dev and CI mode.
 
 ### 2026-11-23 — Audit and Phase 2 replanned
 - Claude Code audited the uncommitted work done with GitHub Copilot (Phase 1 M7 and Phase 2 M1–M3). Backend and frontend lint and tests pass (1656 backend tests, 98% coverage), but nothing after Phase 1 M6 is committed, and iCloud created duplicate files, one of them in `frontend/src/app`.

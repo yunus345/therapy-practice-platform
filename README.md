@@ -1,10 +1,8 @@
 # Seans
 
-Seans (working title) is a practice management and online booking platform for psychologists. It has two sides: a client portal with public profiles, online booking and personal appointments, and a psychologist panel with calendar, clients, appointments and reports.
+Seans (working title) is a practice website and management platform for a psychologist. It has two sides: a public website where visitors read about the practice and book an appointment without an account (or reach the psychologist on WhatsApp), and a psychologist panel for the calendar, appointments, clients and the site content.
 
-The project is in Phase 2, which builds the frontend and design system. The backend
-foundation from Phase 1 is complete. See [`PROGRESS.md`](PROGRESS.md) for the current
-status and [`docs/phases/`](docs/phases/) for the phase specs.
+The project is in Phase 2, which builds the public website and the psychologist panel on the backend from Phase 1. The current code still contains client account screens from an earlier plan; Phase 2 M1 removes them. See [`PROGRESS.md`](PROGRESS.md) for the current status and [`docs/phases/`](docs/phases/) for the phase specs.
 
 ## Architecture
 
@@ -106,7 +104,7 @@ cd backend && uv run pre-commit install
 | `make frontend-install` | Install frontend dependencies from the lockfile |
 | `make frontend-dev` | Run the frontend in dev mode |
 | `make frontend-test`, `make frontend-lint` | Frontend only |
-| `make frontend-e2e` | Run the Playwright tests |
+| `make frontend-e2e` | Run the Playwright tests against the real backend (needs `make up`, `make migrate`, `make seed` and once `cd frontend && corepack pnpm exec playwright install chromium`) |
 | `make api-types` | Regenerate `frontend/openapi.json` and the frontend API types after an API change |
 
 `make help` lists every target. The frontend never declares API types by hand: they come from `frontend/src/lib/api-schema.ts`, which `make api-types` generates and CI checks. `make up` must be running before `make test`, because backend tests use a real PostgreSQL database.
