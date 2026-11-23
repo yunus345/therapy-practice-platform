@@ -2,11 +2,17 @@
 
 Guidance for AI coding agents working in this repository. Read this file fully before every task.
 
+These rules apply to **every** coding agent working here (Claude Code, GitHub Copilot, Codex or any other). `AGENTS.md` and `.github/copilot-instructions.md` point other agents to this file.
+
 ## Project
 
-**Seans** (working title) is a practice management and online booking platform for psychologists.
+**Seans** (working title) is a practice website and management platform for a psychologist.
 
-- Two sides: a **client portal** (public profile page, online booking, own appointments) and a **psychologist panel** (calendar, clients, appointments, payments, reports, optional session notes).
+- Two sides:
+  - a **public website**: introduces the psychologist (about, services, prices, FAQ, contact) and lets visitors book an appointment **without creating an account**, or reach the psychologist on WhatsApp, depending on the booking mode the psychologist chooses;
+  - a **psychologist panel**: calendar, appointments, clients, site content and settings, later payments, reports and optional session notes.
+- **Clients have no accounts and no logged-in area.** Only staff (`admin`, `psychologist`) log in. A client manages a booking through a private link sent by email.
+- The psychologist must be able to manage the site content (photo, texts, contact details, services and prices, booking settings) from the panel, without touching code.
 - It is a portfolio project, but it **may be used by a real psychologist with real client data**. Treat every security and privacy decision as production-grade. Health data is special-category personal data under Turkish KVKK.
 - A data science / AI layer (analytics, no-show prediction, assistant agent, RAG) will be added in later phases. Design data capture with that in mind, but do not build it before its phase.
 
@@ -41,10 +47,14 @@ The owner works on this project occasionally and must always be able to follow w
 - delete or overwrite files unrelated to the current task, or delete many files at once,
 - drop databases, remove Docker volumes, or run destructive migrations,
 - add, remove or upgrade dependencies,
-- edit `CLAUDE.md`, files in `docs/phases/`, or `.claude/settings.json` (propose the change instead),
+- create or edit `CLAUDE.md`, `AGENTS.md`, files in `docs/phases/`, or `.claude/settings.json` (propose the change instead),
 - disable, skip or weaken tests, lint rules or type checks to make something pass.
 
-`.claude/settings.json` enforces some of these at the tool level. Do not try to work around it.
+**Phase specs come from the owner.** Never write a phase spec yourself. If the next phase has no spec in `docs/phases/`, stop and tell the owner.
+
+**Design and user experience are the owner's decisions.** Before any work that sets or changes how the product looks or feels (colors, typography, layout, page structure, navigation, wording of key screens, new screens), present two or three concrete options, with previews where possible, and wait for the owner to choose. Record the decision in `docs/design.md`. Implementing an already approved design needs no new approval.
+
+`.claude/settings.json` enforces some of these at the tool level for Claude Code only. Other agents have no such guard, so follow these rules yourself. Do not try to work around them.
 
 ## Session protocol
 
@@ -67,7 +77,11 @@ The owner works on this project occasionally and must always be able to follow w
 **Before ending a work session or after finishing a milestone**, update `PROGRESS.md`:
 - rewrite the "Current status" section so it is accurate,
 - tick completed items in the milestone checklist,
-- add a dated entry at the top of the log (date, what was done, decisions, open questions). Keep entries short; details belong in commits and ADRs.
+- add a dated entry at the **top** of the log (date, what was done, decisions, open questions). Newest entry first. Keep entries short; details belong in commits and ADRs.
+
+**Commit as you go.** Never leave finished work uncommitted. Commit locally at least once per milestone, in small focused commits, before reporting the milestone as done. Pushing still needs the owner's approval.
+
+**Report honestly.** `PROGRESS.md` and summaries must describe what the code actually does. If a fix is not covered by a test, say so.
 
 ## Stack
 
@@ -120,7 +134,7 @@ Planned modules: `auth`, `users`, `clients`, `scheduling`, `catalog` (therapy se
 ## Security and privacy rules (non-negotiable)
 
 **Data classification**
-- *Public*: profile, services, free slots (never who booked them).
+- *Public*: profile, photo, services and prices, contact details the psychologist chooses to publish, free slots (never who booked them).
 - *Operational*: names, contact details, appointment times, payments.
 - *Clinical*: session notes and any health/condition information. Stored with field-level encryption; never collected through the public booking flow; only the authoring psychologist can read it; every read is audit-logged; the whole module is behind the `CLINICAL_NOTES_ENABLED` flag.
 
@@ -129,13 +143,26 @@ Planned modules: `auth`, `users`, `clients`, `scheduling`, `catalog` (therapy se
 - Server-side sessions: opaque random token in an `httpOnly`, `Secure`, `SameSite=Lax` cookie; only a hash of the token is stored in the DB. Sessions are revocable and expire.
 - CSRF protection on all state-changing requests (double-submit token).
 - TOTP two-factor authentication for staff roles (`admin`, `psychologist`).
-- Rate limiting and temporary lockout on login, registration and password reset.
-- Staff accounts cannot self-register; only an admin creates them.
+- Rate limiting and temporary lockout on login and password reset.
+- Only staff have accounts. Staff accounts cannot self-register; only an admin creates them.
+
+**Public booking (no client accounts)**
+- A booking is confirmed only after a one-time code sent to the client's email. Codes are hashed, short-lived and limited in attempts.
+- A client manages a booking through a private link: a high-entropy random token, stored hashed, valid for exactly one appointment, expiring after it. Pages opened with it are `noindex` and send no referrer.
+- Public endpoints never reveal whether an email or phone already belongs to a client. Responses are identical either way.
+- Public forms are rate limited per IP and per email.
 
 **Authorization**
 - Deny by default. Every endpoint declares which roles may call it.
-- Object-level checks on every read and write (prevent IDOR): a client sees only their own records; a psychologist sees only clients they have a care relationship with.
-- Tests must cover the authorization matrix, including cross-user access attempts.
+- Object-level checks on every read and write (prevent IDOR): a booking token reaches only its own appointment; a psychologist sees only clients they have a care relationship with.
+- Tests must cover the authorization matrix, including cross-user and cross-token access attempts.
+
+**File uploads**
+- Accept only the expected image types, checked by decoding the file, not by its name or declared type. Enforce a size limit.
+- Re-encode images on the server, strip metadata (EXIF, location), store them under random names and never serve uploaded SVG or HTML.
+
+**Third parties on public pages**
+- No trackers, analytics, embedded maps or remotely loaded fonts without the owner's approval. They send visitors' data to third parties, which matters under KVKK. Self-host fonts.
 
 **Data handling**
 - Never log passwords, tokens, personal data or clinical content. Log IDs, not names.
@@ -172,10 +199,12 @@ make down        # stop local infra
 make dev         # run backend in dev mode
 make migrate     # apply Alembic migrations
 make seed        # load synthetic demo data
-make test        # run backend tests
-make lint        # ruff + mypy (and frontend lint once it exists)
+make test        # run backend and frontend tests
+make lint        # backend and frontend lint and type checks
 make fmt         # format code
 ```
+
+Frontend-specific targets may be added; keep `make help` listing all of them and keep the README's prerequisites (including the Node version used in CI) accurate.
 
 ## Definition of done
 
@@ -185,12 +214,13 @@ A task is done only when:
 - `make lint` and `make test` pass with no new warnings,
 - migrations are included and reversible,
 - docs, `.env.example` and ADRs are updated where relevant,
+- the work is committed in small commits,
 - `PROGRESS.md` is updated and the Turkish summary from the session protocol is given.
 
 ## Roadmap
 
 1. **Foundation and backend core**: repo setup, schema, auth, roles, scheduling API, audit, seed data
-2. **Design system and frontend**: client portal and psychologist panel screens
+2. **Public website and psychologist panel**: stabilization, booking without accounts, site settings, owner-approved design, public pages with SEO, panel screens
 3. **Billing, clinical notes, reporting**: payments, encrypted session notes, reports
 4. **Hardening and delivery**: end-to-end tests, CI/CD, deployment, backups, monitoring
 5. **Data science and AI**: analytics dashboard, no-show prediction, assistant agent, RAG

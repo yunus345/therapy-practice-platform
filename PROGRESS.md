@@ -1,16 +1,16 @@
 # Progress
 
-Single source of truth for where the project stands. The agent keeps this file up to date (see the session protocol in `CLAUDE.md`).
+Single source of truth for where the project stands. Every agent keeps this file up to date (see the session protocol in `CLAUDE.md`).
 
 ## Current status
 
-- **Phase:** 1 — Foundation and backend core
-- **Milestone:** M6 done, on branch `phase-1`
-- **Last updated:** 2026-11-20
-- **Next step:** M7 — Tests, after owner approval.
-- **Waiting on owner:** approval to start M7.
-- **Open questions:** none. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered. The repository stays on the iCloud-synced Desktop for now; move it if sync causes trouble.
-- **Known issues:** The in-memory rate limiter counts per process. Restoring a soft-deleted client writes a `clients.updated` audit entry without an actor. Boolean confirmation fields typed `Literal[True]` also accept the JSON number `1`. A rare deadlock while a booking upgrades to an exclusive profile lock returns 500 instead of `SLOT_TAKEN`. Slot calculation is untested for zones with unusual DST rules such as `America/Nuuk`. To be fixed in M7.
+- **Phase:** 2 — Public website and psychologist panel (spec rewritten by the owner on 2026-11-23)
+- **Milestone:** M0 — Stabilization, not started. Work so far is on branch `phase-1`; the last commit is Phase 1 M6, and Phase 1 M7 plus the earlier Phase 2 M1–M3 are still uncommitted.
+- **Last updated:** 2026-11-23
+- **Next step:** Read the new `docs/phases/phase-2.md`, list questions and present the M0 plan. The owner moves the repository out of iCloud first.
+- **Waiting on owner:** moving the repository to `~/Projeler/therapy-practice-platform`; approval of the M0 plan.
+- **Open questions:** none yet for the new spec. Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
+- **Known issues:** see the 2026-11-23 audit entry below. The in-memory rate limiter counts per process.
 
 ## Phase 1 checklist
 
@@ -20,11 +20,59 @@ Single source of truth for where the project stands. The agent keeps this file u
 - [x] M4 — Authentication and authorization
 - [x] M5 — Scheduling
 - [x] M6 — Seed data
-- [ ] M7 — Tests
+- [x] M7 — Tests (still uncommitted; committed in Phase 2 M0)
+
+## Phase 2 checklist
+
+Done under the earlier, agent-written spec and partly superseded: frontend foundation, account screens, client portal.
+
+- [ ] M0 — Stabilization
+- [ ] M1 — Booking without accounts
+- [ ] M2 — Site settings (backend)
+- [ ] M3 — Design direction (owner decision)
+- [ ] M4 — Public website
+- [ ] M5 — Psychologist panel
+- [ ] M6 — Quality and acceptance
 
 ## Log
 
 Newest entries first.
+
+### 2026-11-23 — Audit and Phase 2 replanned
+- Claude Code audited the uncommitted work done with GitHub Copilot (Phase 1 M7 and Phase 2 M1–M3). Backend and frontend lint and tests pass (1656 backend tests, 98% coverage), but nothing after Phase 1 M6 is committed, and iCloud created duplicate files, one of them in `frontend/src/app`.
+- Audit findings: frontend error codes do not match the backend; about 97 lines of hardcoded Turkish UI text; hand-written API types instead of generated ones; the deadlock fix is untested and leaks `PROFILE_LOCK_CONFLICT`; `StrictTrue` is duplicated and the OpenAPI `const: true` was lost; the M7 log misdescribes the audit actor; unpinned CI actions and no Playwright in CI; `NEXT_PUBLIC_API_BASE_URL` in the wrong `.env.example`; Makefile and README gaps; duplicate and unused frontend packages; the earlier `phase-2.md` was written by the agent itself.
+- Owner decisions: no client accounts; booking without an account, confirmed by an email code, managed through a private link; booking mode `online`, `whatsapp` or `both`, set in the panel; the WhatsApp Business API, SMS and Turnstile-like services only with approval; the psychologist manages the photo, texts, contact details, FAQ, services, prices and booking settings; design is chosen by the owner in a dedicated milestone; the repository moves out of iCloud.
+- The owner rewrote `docs/phases/phase-2.md` and updated `CLAUDE.md`, added `AGENTS.md`, `.github/copilot-instructions.md` and new entries in `.claude/settings.json`.
+
+### 2026-11-22 — Phase 2 M3 finished
+- Added public psychologist profile and offered-service screens with Turkish slot selection.
+- Added online appointment booking and protected own-appointments view with upcoming/past/all filters.
+- Added cancellation and reschedule flows with Turkish API error-code mapping.
+- Added Next.js proxy protection for `/randevularim` and `/hesabim`.
+- Verified production build, 4 frontend unit tests and 4 Playwright Chromium smoke tests.
+
+### 2026-11-22 — Phase 2 M2 finished
+- Added Turkish login, registration, password reset, email verification, 2FA setup/verify and account/session screens.
+- Added a CSRF-aware API client, session provider, role/MFA redirects and Turkish backend error-code mappings.
+- Added Zod/react-hook-form validation and shadcn form components.
+- Verified 4 frontend Vitest tests, 2 Playwright Chromium smoke tests and a production build.
+- `make lint` and `make test` pass; the backend suite has 1656 passing tests at 98% coverage.
+
+### 2026-11-22 — Phase 2 M1 finished
+- Scaffolded a Next.js App Router frontend with strict TypeScript and Tailwind CSS.
+- Added next-intl, TanStack Query, react-hook-form, Zod, shadcn/ui, Vitest and Playwright.
+- Added a Turkish landing page, shared design tokens, API error-code handling and unit test setup.
+- Added `docs/phases/phase-2.md`.
+- Verified ESLint, Prettier, 2 Vitest tests, production build and 1 Playwright Chromium smoke test.
+- `make lint` and `make test` pass for backend and frontend. The backend suite has 1656 passing tests at 98% coverage.
+
+### 2026-11-21 — M7 finished
+- Added strict boolean validation for KVKK confirmation fields, so JSON `1` is rejected; both registration and staff client creation are covered.
+- Restored soft-deleted clients now write `clients.updated` with the acting psychologist's user ID instead of no actor.
+- Profile lock deadlocks are contained by savepoints and returned as `SLOT_TAKEN` through the booking flow.
+- PostgreSQL test suite: 1656 passed; total coverage 98%. `make lint` passes with no warnings.
+- Migration upgrade/downgrade tests pass. `/docs` returns 200 and `/api/v1/health` returns `{"status":"ok"}`.
+- `make seed` correctly refused the dev database because it already contains users; seed data was not deleted or overwritten.
 
 ### 2026-11-20 — M6 finished
 - Added `make seed` (`python -m app.seed`): an admin, two psychologists, five services, 80 clients, about 840 appointments with status history and KVKK disclosures, built around the day it runs. ADR-005 documents the approach.
