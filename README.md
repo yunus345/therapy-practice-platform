@@ -53,7 +53,12 @@ Models live in each module's `models.py`. `CHECK` and `EXCLUDE` constraints and 
 
 ## Local setup
 
-You need Docker, [uv](https://docs.astral.sh/uv/) and make.
+Prerequisites:
+
+- Docker and make
+- [uv](https://docs.astral.sh/uv/) for the backend
+- Node.js 26.10.0, the version in [`frontend/.nvmrc`](frontend/.nvmrc) that CI also uses. `pnpm install` refuses other major versions.
+- pnpm 10.24.0 through [Corepack](https://github.com/nodejs/corepack), which reads the version from `packageManager` in `frontend/package.json`. Node 25 and later no longer ship Corepack, so install it once with `npm install --global corepack`. The Makefile runs `corepack pnpm`, so no global pnpm is needed.
 
 ```sh
 make up                           # creates .env from .env.example, starts Postgres and Mailpit
@@ -61,6 +66,8 @@ cd backend && uv sync && cd ..    # installs the Python toolchain and dependenci
 make migrate
 make seed                         # optional: synthetic demo data, see below
 make dev                          # API on http://localhost:8000, docs on /docs
+make frontend-install             # installs frontend dependencies from the lockfile
+make frontend-dev                 # web app on http://localhost:3000
 ```
 
 Mailpit shows captured dev email on <http://localhost:8025>.
@@ -92,11 +99,16 @@ cd backend && uv run pre-commit install
 | `make migrate` | Apply Alembic migrations |
 | `make seed` | Load synthetic demo data into an empty dev database |
 | `make create-admin EMAIL=you@example.com` | Create an admin account, asking for the password |
-| `make test` | Run backend tests against the test database |
-| `make lint` | Run ruff and mypy |
+| `make test` | Run backend and frontend tests |
+| `make lint` | Run backend and frontend lint, formatting and type checks |
 | `make fmt` | Format code |
+| `make backend-test`, `make backend-lint` | Backend only |
+| `make frontend-install` | Install frontend dependencies from the lockfile |
+| `make frontend-dev` | Run the frontend in dev mode |
+| `make frontend-test`, `make frontend-lint` | Frontend only |
+| `make frontend-e2e` | Run the Playwright tests |
 
-`make up` must be running before `make test`, because tests use a real PostgreSQL database.
+`make help` lists every target. `make up` must be running before `make test`, because backend tests use a real PostgreSQL database.
 
 ## Configuration
 

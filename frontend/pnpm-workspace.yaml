@@ -1,3 +1,5 @@
 allowBuilds:
   sharp: false
   unrs-resolver: false
+# Refuse to install on a Node version outside "engines" in package.json.
+engineStrict: true

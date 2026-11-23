@@ -89,8 +89,8 @@ jobs:
           PGHOST: localhost
           PGPASSWORD: ci-owner-password
       - name: Lint and type check
-        run: make lint
+        run: make backend-lint
       - name: Apply migrations
         run: make migrate
       - name: Test
-        run: make test
+        run: make backend-test

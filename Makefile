@@ -1,11 +1,16 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down dev frontend-dev migrate seed test frontend-test frontend-e2e lint frontend-lint fmt create-admin
+.PHONY: help up down dev migrate seed create-admin test lint fmt \
+	backend-test backend-lint \
+	frontend-install frontend-dev frontend-test frontend-e2e frontend-lint
 
 BACKEND := cd backend && uv run
-FRONTEND := cd frontend && npx --yes pnpm@10.24.0
+# pnpm comes from Corepack at the version in frontend/package.json ("packageManager").
+# CI installs pnpm directly and runs `make <target> PNPM=pnpm`.
+PNPM ?= corepack pnpm
+FRONTEND := cd frontend && $(PNPM)
 
 help: ## Show available targets
-	@grep -hE '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
 
 .env:
 	cp .env.example .env
@@ -19,9 +24,6 @@ down: ## Stop local infra (keeps data volumes)
 dev: ## Run backend in dev mode
 	$(BACKEND) uvicorn app.main:create_app --factory --reload --no-access-log
 
-frontend-dev: ## Run frontend in dev mode
-	$(FRONTEND) dev
-
 migrate: ## Apply Alembic migrations
 	$(BACKEND) alembic upgrade head
 
@@ -31,9 +33,28 @@ seed: ## Load synthetic demo data into an empty dev database
 create-admin: ## Create an admin account: make create-admin EMAIL=admin@example.com
 	$(BACKEND) python -m app.cli create-admin --email "$(EMAIL)"
 
-test: ## Run backend and frontend unit tests
+test: backend-test frontend-test ## Run backend and frontend tests
+
+lint: backend-lint frontend-lint ## Run backend and frontend lint and type checks
+
+fmt: ## Format code
+	$(BACKEND) ruff check --fix .
+	$(BACKEND) ruff format .
+	$(FRONTEND) format
+
+backend-test: ## Run backend tests against the test database
 	$(BACKEND) pytest --cov --cov-report=term-missing
-	$(FRONTEND) test
+
+backend-lint: ## Run ruff and mypy
+	$(BACKEND) ruff check .
+	$(BACKEND) ruff format --check .
+	$(BACKEND) mypy
+
+frontend-install: ## Install frontend dependencies from the lockfile
+	$(FRONTEND) install --frozen-lockfile
+
+frontend-dev: ## Run frontend in dev mode
+	$(FRONTEND) dev
 
 frontend-test: ## Run frontend unit tests
 	$(FRONTEND) test
@@ -41,18 +62,7 @@ frontend-test: ## Run frontend unit tests
 frontend-e2e: ## Run frontend Playwright tests
 	$(FRONTEND) test:e2e
 
-lint: ## Run backend and frontend lint/type checks
-	$(BACKEND) ruff check .
-	$(BACKEND) ruff format --check .
-	$(BACKEND) mypy
+frontend-lint: ## Run frontend lint, formatting and type checks
 	$(FRONTEND) lint
 	$(FRONTEND) format:check
-
-frontend-lint: ## Run frontend lint and formatting checks
-	$(FRONTEND) lint
-	$(FRONTEND) format:check
-
-fmt: ## Format code
-	$(BACKEND) ruff check --fix .
-	$(BACKEND) ruff format .
-	$(FRONTEND) format
+	$(FRONTEND) typecheck
