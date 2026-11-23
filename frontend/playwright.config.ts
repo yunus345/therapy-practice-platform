@@ -9,7 +9,8 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: isCI,
-  reporter: isCI ? "list" : "html",
+  // CI also writes the HTML report, which the workflow uploads when a test fails.
+  reporter: isCI ? [["list"], ["html", { open: "never" }]] : "html",
   use: {
     baseURL,
     trace: "retain-on-failure",

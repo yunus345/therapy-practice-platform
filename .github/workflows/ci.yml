@@ -1,7 +1,9 @@
 name: CI
 
+# Pushes to main and pull requests, so that a pull request runs once and not twice.
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -170,3 +172,10 @@ jobs:
       - name: End-to-end tests
         # Playwright starts the backend and the built frontend itself.
         run: make frontend-e2e
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
