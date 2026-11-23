@@ -76,5 +76,43 @@
     "loading": "Yükleniyor...",
     "cancelSuccess": "Randevu iptal edildi.",
     "rescheduleSuccess": "Randevu yeniden planlandı."
+  },
+  "Errors": {
+    "APPOINTMENT_NOT_STARTED": "Randevu henüz başlamadığı için bu işlem yapılamaz.",
+    "BAD_REQUEST": "İstek işlenemedi.",
+    "CANCELLATION_WINDOW_CLOSED": "İptal süresi sona erdi.",
+    "CANNOT_TARGET_SELF": "Bu işlem kendi hesabınıza uygulanamaz.",
+    "CLIENT_HAS_ACTIVE_APPOINTMENTS": "Danışanın yaklaşan randevuları olduğu için bu işlem yapılamaz.",
+    "CSRF_INVALID": "Güvenlik kontrolü geçersiz. Sayfayı yenileyip tekrar deneyin.",
+    "DATE_RANGE_INVALID": "Tarih aralığı geçersiz.",
+    "EMAIL_NOT_VERIFIED": "Önce e-posta adresinizi doğrulayın.",
+    "EMAIL_TAKEN": "Bu e-posta adresi zaten kullanılıyor.",
+    "FORBIDDEN": "Bu işlem için yetkiniz yok.",
+    "HTTP_ERROR": "İstek tamamlanamadı.",
+    "INTERNAL_ERROR": "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+    "INVALID_BIRTH_DATE": "Doğum tarihi gelecekte olamaz.",
+    "INVALID_CODE": "Girdiğiniz kod hatalı.",
+    "INVALID_CREDENTIALS": "E-posta adresi veya şifre hatalı.",
+    "INVALID_STATUS_TRANSITION": "Randevu bu duruma geçirilemez.",
+    "INVALID_TIME_RANGE": "Başlangıç, bitişten önce olmalıdır.",
+    "INVALID_TOKEN": "Bağlantı geçersiz veya süresi dolmuş.",
+    "METHOD_NOT_ALLOWED": "Bu işlem desteklenmiyor.",
+    "MFA_REQUIRED": "Lütfen önce iki adımlı doğrulamayı tamamlayın.",
+    "NOT_AUTHENTICATED": "Bu işlem için giriş yapmalısınız.",
+    "NOT_FOUND": "Aradığınız kayıt bulunamadı.",
+    "PSYCHOLOGIST_ID_REQUIRED": "Takvimini görmek istediğiniz psikoloğu seçin.",
+    "RATE_LIMITED": "Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.",
+    "SERVICE_UNAVAILABLE": "Hizmet şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.",
+    "SLOT_TAKEN": "Seçilen saat başka biri tarafından alınmış.",
+    "SLOT_UNAVAILABLE": "Bu saat randevu için uygun değil.",
+    "SLUG_TAKEN": "Bu profil adresi zaten kullanılıyor.",
+    "TIME_OFF_CONFLICT": "Bu dönem, aktif randevularla çakışıyor.",
+    "TWO_FACTOR_SETUP_REQUIRED": "Personel hesabı için önce iki adımlı doğrulama kurulmalıdır.",
+    "TWO_FACTOR_STATE_INVALID": "Bu işlem, iki adımlı doğrulamanın şu anki durumuna uygun değil.",
+    "VALIDATION_ERROR": "Lütfen girdiğiniz bilgileri kontrol edin.",
+    "WEAK_PASSWORD": "Şifre yeterince güçlü değil."
+  },
+  "Common": {
+    "requestFailed": "İstek tamamlanamadı."
   }
 }

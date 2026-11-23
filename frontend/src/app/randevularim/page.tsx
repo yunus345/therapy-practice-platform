@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiError } from "@/lib/api";
-import { authErrorMessage } from "@/lib/error-messages";
+import { errorMessage } from "@/lib/error-messages";
 import {
   cancelOwnAppointment,
   getPublicProfile,
@@ -107,7 +107,7 @@ function OwnAppointmentsContent() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }
@@ -124,7 +124,7 @@ function OwnAppointmentsContent() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ApiError } from "@/lib/api";
-import { authErrorMessage } from "@/lib/error-messages";
+import { errorMessage } from "@/lib/error-messages";
 import { listSessions, revokeSession, type AuthSession } from "@/lib/auth";
 import { useSession } from "@/providers/session-provider";
 
@@ -28,7 +28,7 @@ export default function AccountPage() {
       .catch((caught) =>
         setError(
           caught instanceof ApiError
-            ? authErrorMessage(caught.code)
+            ? errorMessage(caught.code)
             : "Oturumlar yüklenemedi.",
         ),
       );
@@ -50,7 +50,7 @@ export default function AccountPage() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "Oturum kapatılamadı.",
       );
     }

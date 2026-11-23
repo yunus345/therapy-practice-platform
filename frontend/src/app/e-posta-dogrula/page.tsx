@@ -6,7 +6,7 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ApiError } from "@/lib/api";
 import { verifyEmail } from "@/lib/auth";
-import { authErrorMessage } from "@/lib/error-messages";
+import { errorMessage } from "@/lib/error-messages";
 
 export default function VerifyEmailPage() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -31,7 +31,7 @@ export default function VerifyEmailPage() {
         setStatus("error");
         setError(
           caught instanceof ApiError
-            ? authErrorMessage(caught.code)
+            ? errorMessage(caught.code)
             : "İstek tamamlanamadı.",
         );
       });

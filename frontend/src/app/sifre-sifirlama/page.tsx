@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { confirmPasswordReset, requestPasswordReset } from "@/lib/auth";
-import { authErrorMessage } from "@/lib/error-messages";
+import { errorMessage } from "@/lib/error-messages";
 
 const requestSchema = z.object({
   email: z.email("Geçerli bir e-posta adresi girin."),
@@ -59,7 +59,7 @@ function PasswordResetContent() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }
@@ -74,7 +74,7 @@ function PasswordResetContent() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }

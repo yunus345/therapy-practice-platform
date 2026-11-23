@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
-import { authErrorMessage } from "@/lib/error-messages";
+import { errorMessage } from "@/lib/error-messages";
 import { login } from "@/lib/auth";
 import { useSession } from "@/providers/session-provider";
 import { useState } from "react";
@@ -48,7 +48,7 @@ export default function LoginPage() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }

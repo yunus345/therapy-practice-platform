@@ -24,7 +24,7 @@ import {
   startTwoFactorSetup,
   verifyTwoFactor,
 } from "@/lib/auth";
-import { authErrorMessage } from "@/lib/error-messages";
+import { errorMessage } from "@/lib/error-messages";
 import { useSession } from "@/providers/session-provider";
 
 const codeSchema = z.object({
@@ -60,7 +60,7 @@ export default function TwoFactorPage() {
       .catch((caught) =>
         setError(
           caught instanceof ApiError
-            ? authErrorMessage(caught.code)
+            ? errorMessage(caught.code)
             : "İstek tamamlanamadı.",
         ),
       );
@@ -84,7 +84,7 @@ export default function TwoFactorPage() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }
@@ -99,7 +99,7 @@ export default function TwoFactorPage() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }
@@ -114,7 +114,7 @@ export default function TwoFactorPage() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }

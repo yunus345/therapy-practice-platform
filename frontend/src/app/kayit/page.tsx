@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/lib/api";
 import { register as registerAccount } from "@/lib/auth";
-import { authErrorMessage } from "@/lib/error-messages";
+import { errorMessage } from "@/lib/error-messages";
 
 const schema = z
   .object({
@@ -76,7 +76,7 @@ export default function RegisterPage() {
     } catch (caught) {
       setError(
         caught instanceof ApiError
-          ? authErrorMessage(caught.code)
+          ? errorMessage(caught.code)
           : "İstek tamamlanamadı.",
       );
     }
