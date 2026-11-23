@@ -14,6 +14,12 @@ repos:
   # backend/ so that paths in its ruff configuration resolve correctly.
   - repo: local
     hooks:
+      # iCloud and Finder create copies named "name 2" or "name 2.ext" on sync conflicts.
+      - id: no-duplicate-copies
+        name: reject "name 2" duplicate copies
+        entry: File or folder names ending in " 2" are sync-conflict copies; remove them.
+        language: fail
+        files: '(^|/)[^/]* 2(\.[^/]+)?(/|$)'
       - id: ruff-check
         name: ruff check
         entry: sh -c 'cd backend && uv run ruff check --fix .'

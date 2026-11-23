@@ -8,6 +8,18 @@ permissions:
   contents: read
 
 jobs:
+  hygiene:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Reject sync-conflict copies
+        # iCloud and Finder create copies named "name 2" or "name 2.ext".
+        run: |
+          if git ls-files -z | tr '\0' '\n' | grep -E '(^|/)[^/]* 2(\.[^/]+)?(/|$)'; then
+            echo "File or folder names ending in ' 2' are sync-conflict copies; remove them."
+            exit 1
+          fi
+
   frontend:
     runs-on: ubuntu-24.04
     steps:
