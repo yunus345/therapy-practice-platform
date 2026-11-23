@@ -2,7 +2,9 @@
 
 Seans (working title) is a practice management and online booking platform for psychologists. It has two sides: a client portal with public profiles, online booking and personal appointments, and a psychologist panel with calendar, clients, appointments and reports.
 
-The project is in Phase 1, which builds the backend core. See [`PROGRESS.md`](PROGRESS.md) for the current status and [`docs/phases/`](docs/phases/) for the phase specs.
+The project is in Phase 2, which builds the frontend and design system. The backend
+foundation from Phase 1 is complete. See [`PROGRESS.md`](PROGRESS.md) for the current
+status and [`docs/phases/`](docs/phases/) for the phase specs.
 
 ## Architecture
 
