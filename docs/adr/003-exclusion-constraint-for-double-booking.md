@@ -1,6 +1,6 @@
 # ADR-003: Double booking prevented by an exclusion constraint
 
-**Status:** Accepted (2026-11-02)
+**Status:** Accepted (2026-11-02). Locks revised 2026-11-23.
 
 ## Context
 
@@ -23,11 +23,19 @@ The range is half-open, so one appointment can start exactly when another ends. 
 
 The constraint covers overlaps only. Time off and buffers are checked in the service, so a booking and a change to the schedule must not interleave:
 
-- A booking locks the psychologist's profile row `FOR SHARE`, so bookings run in parallel and the constraint decides between them. When `buffer_minutes > 0` it locks `FOR UPDATE` instead, because the constraint does not know about buffers. If a buffer appears while a request waits for its shared lock, it locks again exclusively.
+- An online booking, and the new slot of a client reschedule, locks the psychologist's profile row `FOR UPDATE`, whatever the buffer. The constraint does not know about buffers, and a lock taken once at full strength never has to be upgraded.
 - Creating or changing time off locks the profile `FOR UPDATE`. It waits for bookings in flight, and later bookings see the new period.
-- Staff bookings always take the shared lock, because they may ignore the buffer.
+- Staff bookings and staff reschedules take the shared lock (`FOR SHARE`), because they may ignore the buffer, and they never upgrade it.
 - A reschedule locks the appointment row first and the profile second. No writer takes them in the other order.
-- The insert runs in a savepoint. An exclusion violation, or a deadlock between two requests upgrading their locks, becomes `409 SLOT_TAKEN`; the request can be retried.
+- The insert runs in a savepoint. An exclusion violation, or a deadlock between two staff inserts waiting for each other's uncommitted rows in the exclusion index, becomes `409 SLOT_TAKEN`; the request can be retried.
+
+### Revision 2026-11-23: no lock upgrades
+
+Online bookings first took the shared lock and upgraded it to `FOR UPDATE` when a buffer appeared while they waited. Two requests upgrading at once deadlock, so Phase 1 M7 caught the deadlock in a savepoint and turned it into an error. That code had no test that reproduced the deadlock, and its error code could also surface from time off and staff reschedules.
+
+Online bookings now always lock exclusively, so the upgrade, the savepoint around the lock and the extra error code are gone.
+
+Trade-off: online bookings of one psychologist no longer run in parallel. Each waits for the one before it to commit, which takes milliseconds. With one practice and a handful of bookings a day this costs nothing measurable. If booking traffic ever grows enough for the wait to matter, revisit this together with buffers in the constraint.
 
 ## Alternatives
 

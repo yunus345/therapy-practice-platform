@@ -62,11 +62,7 @@ from app.modules.scheduling.slots import (
 from app.modules.scheduling.state_machine import ensure_transition_allowed
 from app.modules.users.actor import STAFF_ROLES, Actor
 from app.modules.users.models import PsychologistProfile, UserRole
-from app.modules.users.service import (
-    ProfileLockConflictError,
-    UserService,
-    build_user_service,
-)
+from app.modules.users.service import UserService, build_user_service
 
 RULE_ENTITY = "availability_rule"
 TIME_OFF_ENTITY = "time_off"
@@ -756,22 +752,13 @@ class SchedulingService:
         return client
 
     async def _lock_for_booking(self, profile: PsychologistProfile) -> PsychologistProfile:
-        """Lock a schedule for a booking and return its current state.
+        """Lock a schedule exclusively for an online booking and return its current state.
 
-        With shared locks bookings run in parallel and the exclusion constraint decides
-        between them. It knows nothing about buffers, so those need an exclusive lock.
+        Online bookings of one psychologist run one after another. The exclusion constraint
+        knows nothing about buffers, and a lock taken once never has to be upgraded, so
+        two bookings cannot deadlock on the profile row (ADR-003).
         """
-        psychologist_id = profile.user_id
-        # Read first: the same object changes if the lock finds a newer version of the row.
-        exclusive = profile.buffer_minutes > 0
-        try:
-            locked = await self._users.lock_profile(psychologist_id, exclusive=exclusive)
-            if locked.buffer_minutes > 0 and not exclusive:
-                # The buffer was set while this request waited for its shared lock.
-                return await self._users.lock_profile(psychologist_id, exclusive=True)
-            return locked
-        except ProfileLockConflictError as error:
-            raise SlotTakenError from error
+        return await self._users.lock_profile(profile.user_id, exclusive=True)
 
     async def _lock_for_client_change(
         self, client: Client, appointment_id: uuid.UUID

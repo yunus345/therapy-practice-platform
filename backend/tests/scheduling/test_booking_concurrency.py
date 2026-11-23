@@ -528,7 +528,37 @@ class TestLocks:
             with pytest.raises(InvalidStatusTransitionError):
                 await parallel
 
-    async def test_a_buffer_set_during_a_booking_makes_it_exclusive(
+    async def test_an_online_booking_locks_the_schedule_exclusively(
+        self,
+        committed_engine: AsyncEngine,
+        practice: Practice,
+        first: CommittedBooker,
+        build: Callable[[AsyncSession], SchedulingService],
+        clock: FakeClock,
+    ) -> None:
+        """Even without a buffer: the lock is never upgraded, so it cannot deadlock."""
+        actor = Actor(first.user_id, UserRole.CLIENT)
+        request = BookAppointmentRequest(
+            psychologist_slug=practice.slug,
+            service_id=practice.service_id,
+            starts_at=local(10),
+        )
+        async with (
+            AsyncSession(committed_engine) as booking,
+            AsyncSession(committed_engine) as later,
+        ):
+            await build(booking).book_appointment(actor, request, ip_address=None)
+            waiting = asyncio.create_task(
+                build_user_service(later, clock).lock_profile(
+                    practice.psychologist_id, exclusive=False
+                )
+            )
+            await assert_blocked(waiting)
+
+            await booking.commit()
+            await waiting
+
+    async def test_a_booking_waits_for_a_buffer_change_in_flight(
         self,
         committed_engine: AsyncEngine,
         practice: Practice,
@@ -545,7 +575,6 @@ class TestLocks:
         async with (
             AsyncSession(committed_engine) as patching,
             AsyncSession(committed_engine) as booking,
-            AsyncSession(committed_engine) as later,
         ):
             users = build_user_service(patching, clock)
             profile = await users.lock_profile(practice.psychologist_id, exclusive=True)
@@ -557,15 +586,7 @@ class TestLocks:
 
             await patching.commit()
             await parallel
-            waiting = asyncio.create_task(
-                build_user_service(later, clock).lock_profile(
-                    practice.psychologist_id, exclusive=False
-                )
-            )
-            await assert_blocked(waiting)
-
             await booking.commit()
-            await waiting
 
 
 class DriverError(Exception):

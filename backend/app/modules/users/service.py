@@ -3,17 +3,14 @@
 import uuid
 from collections.abc import Collection, Mapping
 from datetime import datetime, timedelta
-from typing import Any, cast
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
 from app.core.errors import AppError, NotFoundError
 from app.modules.users.models import PsychologistProfile, User
-from app.modules.users.repository import (
-    PROFILE_LOCK_CONFLICT,
-    UserRepository,
-)
+from app.modules.users.repository import UserRepository
 
 
 class EmailTakenError(AppError):
@@ -26,12 +23,6 @@ class SlugTakenError(AppError):
     status_code = 409
     code = "SLUG_TAKEN"
     message = "This profile address is already in use."
-
-
-class ProfileLockConflictError(AppError):
-    status_code = 409
-    code = "PROFILE_LOCK_CONFLICT"
-    message = "The profile changed while the request was in progress."
 
 
 class UserService:
@@ -75,15 +66,14 @@ class UserService:
     async def lock_profile(self, user_id: uuid.UUID, exclusive: bool) -> PsychologistProfile:
         """Lock a profile until the transaction ends and return its current state.
 
-        Shared locks let bookings run in parallel, leaving the exclusion constraint to
-        decide between them. An exclusive lock is for checks that constraint cannot make.
+        Shared locks let staff bookings run in parallel, leaving the exclusion constraint to
+        decide between them. An exclusive lock is for checks that constraint cannot make,
+        such as buffers and time off.
         """
         profile = await self._repository.lock_profile(user_id, exclusive)
-        if profile is PROFILE_LOCK_CONFLICT:
-            raise ProfileLockConflictError
         if profile is None:
             raise NotFoundError
-        return cast(PsychologistProfile, profile)
+        return profile
 
     async def record_failed_attempt(
         self, user: User, max_attempts: int, lockout: timedelta
