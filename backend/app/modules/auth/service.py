@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
 from app.core.config import Settings
-from app.core.errors import AppError, NotFoundError
+from app.core.errors import AppError, ErrorCode, NotFoundError
 from app.core.security import (
     SecretBox,
     generate_token,
@@ -44,45 +44,45 @@ USER_ENTITY = "user"
 
 class NotAuthenticatedError(AppError):
     status_code = 401
-    code = "NOT_AUTHENTICATED"
+    code = ErrorCode.NOT_AUTHENTICATED
     message = "Authentication is required."
 
 
 class InvalidCredentialsError(AppError):
     status_code = 401
-    code = "INVALID_CREDENTIALS"
+    code = ErrorCode.INVALID_CREDENTIALS
     message = "The email or password is incorrect."
     keep_transaction = True
 
 
 class InvalidCodeError(AppError):
     status_code = 401
-    code = "INVALID_CODE"
+    code = ErrorCode.INVALID_CODE
     message = "The code is incorrect."
     keep_transaction = True
 
 
 class InvalidTokenError(AppError):
     status_code = 400
-    code = "INVALID_TOKEN"
+    code = ErrorCode.INVALID_TOKEN
     message = "The link is invalid or has expired."
 
 
 class MfaRequiredError(AppError):
     status_code = 403
-    code = "MFA_REQUIRED"
+    code = ErrorCode.MFA_REQUIRED
     message = "Two-factor verification is required."
 
 
 class TwoFactorSetupRequiredError(AppError):
     status_code = 403
-    code = "TWO_FACTOR_SETUP_REQUIRED"
+    code = ErrorCode.TWO_FACTOR_SETUP_REQUIRED
     message = "Two-factor authentication must be enabled first."
 
 
 class TwoFactorStateError(AppError):
     status_code = 409
-    code = "TWO_FACTOR_STATE_INVALID"
+    code = ErrorCode.TWO_FACTOR_STATE_INVALID
     message = "This action does not apply to the current two-factor state."
 
 

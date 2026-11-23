@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.core import data
-from app.core.errors import AppError
+from app.core.errors import AppError, ErrorCode
 
 MIN_PASSWORD_LENGTH = 10
 # Hashing cost grows with length, so the upper limit also stops abuse.
@@ -13,7 +13,7 @@ MAX_PASSWORD_LENGTH = 128
 
 class WeakPasswordError(AppError):
     status_code = 422
-    code = "WEAK_PASSWORD"
+    code = ErrorCode.WEAK_PASSWORD
     message = "The password does not meet the requirements."
 
 

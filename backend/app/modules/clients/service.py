@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
 from app.core.config import Settings
-from app.core.errors import AppError, NotFoundError
+from app.core.errors import AppError, ErrorCode, NotFoundError
 from app.core.models import changed_values
 from app.core.pagination import PageParams
 from app.modules.audit.service import AuditAction, AuditService, build_audit_service
@@ -30,13 +30,13 @@ CLIENT_ENTITY = "client"
 
 class InvalidBirthDateError(AppError):
     status_code = 422
-    code = "INVALID_BIRTH_DATE"
+    code = ErrorCode.INVALID_BIRTH_DATE
     message = "The birth date cannot be in the future."
 
 
 class ClientHasActiveAppointmentsError(AppError):
     status_code = 409
-    code = "CLIENT_HAS_ACTIVE_APPOINTMENTS"
+    code = ErrorCode.CLIENT_HAS_ACTIVE_APPOINTMENTS
     message = "This client has upcoming appointments."
 
 

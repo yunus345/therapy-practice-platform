@@ -8,7 +8,7 @@ session use the binding `anonymous`, which covers login and registration.
 from fastapi import Request
 
 from app.core.config import Settings
-from app.core.errors import AppError
+from app.core.errors import AppError, ErrorCode
 from app.core.middleware import CSRF_HEADER
 from app.core.security import create_csrf_token, hash_token, verify_csrf_token
 
@@ -20,7 +20,7 @@ ANONYMOUS_BINDING = "anonymous"
 
 class CsrfInvalidError(AppError):
     status_code = 403
-    code = "CSRF_INVALID"
+    code = ErrorCode.CSRF_INVALID
     message = "The security token is missing or invalid."
 
 

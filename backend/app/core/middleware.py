@@ -14,7 +14,7 @@ from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core.config import Environment, Settings
-from app.core.errors import error_response
+from app.core.errors import ErrorCode, error_response
 
 logger = structlog.get_logger(__name__)
 
@@ -129,7 +129,9 @@ class UnhandledErrorMiddleware:
             logger.error("unhandled_error", exc_info=error)
             if response_started:
                 raise
-            response = error_response(500, "INTERNAL_ERROR", "An unexpected error occurred.")
+            response = error_response(
+                500, ErrorCode.INTERNAL_ERROR, "An unexpected error occurred."
+            )
             await response(scope, receive, send)
 
 

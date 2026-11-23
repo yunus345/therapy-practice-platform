@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
-from app.core.errors import AppError, NotFoundError
+from app.core.errors import AppError, ErrorCode, NotFoundError
 from app.core.security import hash_password
 from app.modules.audit.service import AuditAction, AuditService, build_audit_service
 from app.modules.auth.passwords import ensure_acceptable_password
@@ -19,7 +19,7 @@ USER_ENTITY = "user"
 
 class CannotTargetSelfError(AppError):
     status_code = 409
-    code = "CANNOT_TARGET_SELF"
+    code = ErrorCode.CANNOT_TARGET_SELF
     message = "This action cannot be applied to your own account."
 
 

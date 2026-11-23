@@ -8,20 +8,20 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
-from app.core.errors import AppError, NotFoundError
+from app.core.errors import AppError, ErrorCode, NotFoundError
 from app.modules.users.models import PsychologistProfile, User
 from app.modules.users.repository import UserRepository
 
 
 class EmailTakenError(AppError):
     status_code = 409
-    code = "EMAIL_TAKEN"
+    code = ErrorCode.EMAIL_TAKEN
     message = "This email is already in use."
 
 
 class SlugTakenError(AppError):
     status_code = 409
-    code = "SLUG_TAKEN"
+    code = ErrorCode.SLUG_TAKEN
     message = "This profile address is already in use."
 
 

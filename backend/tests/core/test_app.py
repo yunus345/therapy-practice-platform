@@ -4,14 +4,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.core.config import Environment
-from app.core.errors import AppError, NotFoundError
+from app.core.errors import AppError, ErrorCode, NotFoundError
 from app.main import create_app
 from tests.conftest import SettingsFactory
 
 
 class SlotTakenError(AppError):
     status_code = 409
-    code = "SLOT_TAKEN"
+    code = ErrorCode.SLOT_TAKEN
     message = "The slot is taken."
 
 

@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.clock import Clock
 from app.core.config import Settings
-from app.core.errors import AppError, NotFoundError
+from app.core.errors import AppError, ErrorCode, NotFoundError
 from app.core.models import changed_values
 from app.core.pagination import PageParams
 from app.modules.audit.service import AuditAction, AuditService, build_audit_service
@@ -73,49 +73,49 @@ ONE_DAY = timedelta(days=1)
 
 class PsychologistIdRequiredError(AppError):
     status_code = 422
-    code = "PSYCHOLOGIST_ID_REQUIRED"
+    code = ErrorCode.PSYCHOLOGIST_ID_REQUIRED
     message = "Choose the psychologist whose schedule to read."
 
 
 class InvalidTimeRangeError(AppError):
     status_code = 422
-    code = "INVALID_TIME_RANGE"
+    code = ErrorCode.INVALID_TIME_RANGE
     message = "The start must come before the end."
 
 
 class DateRangeInvalidError(AppError):
     status_code = 422
-    code = "DATE_RANGE_INVALID"
+    code = ErrorCode.DATE_RANGE_INVALID
     message = "The date range is reversed or too long."
 
 
 class TimeOffConflictError(AppError):
     status_code = 409
-    code = "TIME_OFF_CONFLICT"
+    code = ErrorCode.TIME_OFF_CONFLICT
     message = "This period overlaps active appointments."
 
 
 class EmailNotVerifiedError(AppError):
     status_code = 403
-    code = "EMAIL_NOT_VERIFIED"
+    code = ErrorCode.EMAIL_NOT_VERIFIED
     message = "Verify your email address first."
 
 
 class SlotTakenError(AppError):
     status_code = 409
-    code = "SLOT_TAKEN"
+    code = ErrorCode.SLOT_TAKEN
     message = "This time has been taken."
 
 
 class SlotUnavailableError(AppError):
     status_code = 409
-    code = "SLOT_UNAVAILABLE"
+    code = ErrorCode.SLOT_UNAVAILABLE
     message = "This time cannot be booked."
 
 
 class CancellationWindowClosedError(AppError):
     status_code = 409
-    code = "CANCELLATION_WINDOW_CLOSED"
+    code = ErrorCode.CANCELLATION_WINDOW_CLOSED
     message = "It is too late to change this appointment."
 
 

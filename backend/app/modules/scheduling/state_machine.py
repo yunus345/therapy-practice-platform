@@ -3,19 +3,19 @@
 from collections.abc import Mapping
 from datetime import datetime
 
-from app.core.errors import AppError
+from app.core.errors import AppError, ErrorCode
 from app.modules.scheduling.models import AppointmentStatus
 
 
 class InvalidStatusTransitionError(AppError):
     status_code = 409
-    code = "INVALID_STATUS_TRANSITION"
+    code = ErrorCode.INVALID_STATUS_TRANSITION
     message = "The appointment cannot change to this status."
 
 
 class AppointmentNotStartedError(AppError):
     status_code = 409
-    code = "APPOINTMENT_NOT_STARTED"
+    code = ErrorCode.APPOINTMENT_NOT_STARTED
     message = "The appointment has not started yet."
 
 

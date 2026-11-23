@@ -3,13 +3,13 @@
 import uuid
 from dataclasses import dataclass
 
-from app.core.errors import AppError
+from app.core.errors import AppError, ErrorCode
 from app.modules.users.models import UserRole
 
 
 class ForbiddenError(AppError):
     status_code = 403
-    code = "FORBIDDEN"
+    code = ErrorCode.FORBIDDEN
     message = "You do not have access to this resource."
 
 
