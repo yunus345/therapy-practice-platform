@@ -5,15 +5,15 @@ Single source of truth for where the project stands. Every agent keeps this file
 ## Current status
 
 - **Phase:** 2 — Public website and psychologist panel (spec rewritten by the owner on 2026-11-23)
-- **Milestone:** M0 — Stabilization. All code and docs work is done and committed locally on branch `phase-1`; pushing, a green CI run and bringing the work to `main` are still open.
+- **Milestone:** M0 — Stabilization, done. CI is green on `phase-1` (hygiene, frontend, backend, e2e). The work reaches `main` through a pull request from `phase-1`, merged once the owner approves; `phase-1` is deleted afterwards.
 - **Last updated:** 2026-11-23
-- **Next step:** with the owner's approval, push `phase-1` and confirm CI is green (hygiene, frontend, backend, e2e). Then bring the work to `main` (proposal: a pull request from `phase-1`), with the owner's approval.
-- **Waiting on owner:** approval to push `phase-1`; approval of how to merge into `main`; approval of the branch workflow proposed below.
-- **Open questions:**
-  - Proposed workflow after `main` has the work: one branch per milestone (`phase-2/m1-booking-without-accounts` and so on), each merged into `main` through a pull request once CI is green and the owner approves. No direct commits to `main`.
-  - `pnpm/action-setup` and `actions/setup-node` are pinned to the latest release of their current majors (v4.4.0, v5.0.0). Newer majors exist (v6.1.1, v7.1.0); upgrading needs approval.
-  - Playwright reports are only printed in CI. Uploading them as an artifact would add `actions/upload-artifact`; needs approval.
-  - Owner-approved follow-ups: in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
+- **Next step:** present the M1 plan (booking without accounts) and wait for approval. M1 is built on its own branch from `main`.
+- **Waiting on owner:** approval to merge the `phase-1` pull request; the `main` protection rule below (set by the owner); approval of the M1 plan.
+- **Workflow (owner-approved):** one branch per milestone, merged into `main` through a pull request once CI is green and the owner approves. No direct commits to `main`. CI runs on pushes to `main` and on pull requests.
+- **Proposed protection for `main`** (owner sets it in GitHub): require a pull request before merging; require the status checks `hygiene`, `frontend`, `backend` and `e2e` to pass, with the branch up to date; block force pushes and deletion; apply the rules to administrators too.
+- **Open questions:** none.
+- **Deferred to Phase 4 (owner decision):** upgrade the GitHub Actions to their newest majors (`pnpm/action-setup` v6, `actions/setup-node` v7 and others) and pin every action to a commit SHA instead of a tag.
+- **Owner-approved follow-ups:** in Phase 4, a retention period of about 1 year for IP addresses and user agents, with automatic deletion, confirmed by a lawyer; automatic cancellation of `requested` appointments unanswered for 24 hours once background workers exist, with manual handling until then. A lawyer must write the KVKK disclosure text before real client data is entered.
 - **Known issues:** the in-memory rate limiter counts per process. Hardcoded Turkish strings and wrong error-code use on screens remain until M1 (out of M0 scope by the spec). The first Phase 2 frontend commit does not build on its own (noted in its message).
 
 ## Phase 1 checklist
@@ -30,7 +30,7 @@ Single source of truth for where the project stands. Every agent keeps this file
 
 Done under the earlier, agent-written spec and partly superseded: frontend foundation, account screens, client portal.
 
-- [ ] M0 — Stabilization
+- [x] M0 — Stabilization
 - [ ] M1 — Booking without accounts
 - [ ] M2 — Site settings (backend)
 - [ ] M3 — Design direction (owner decision)
@@ -42,7 +42,11 @@ Done under the earlier, agent-written spec and partly superseded: frontend found
 
 Newest entries first.
 
-### 2026-11-23 — Phase 2 M0 work committed (push pending)
+### 2026-11-23 — Phase 2 M0 finished
+- Pushed `phase-1`; all four CI jobs passed. CI now runs on pushes to `main` and on pull requests only, and uploads the Playwright HTML report for 7 days when e2e fails (`actions/upload-artifact`, approved).
+- Owner decisions: one branch and pull request per milestone; action majors stay for now, upgrades and SHA pinning in Phase 4; `phase-1` is deleted after the merge.
+
+### 2026-11-23 — Phase 2 M0 work committed
 - Repository moved out of iCloud; environments rebuilt (`uv sync`, clean pnpm install); iCloud copies deleted. A pre-commit hook and a CI job reject names ending in ` 2`.
 - Committed the earlier work as it was: Phase 1 M7, then the old Phase 2 M1, M2 and M3, then the owner's spec and agent rules.
 - Profile locking: online bookings always lock `FOR UPDATE`, so no lock is upgraded and the deadlock path, its marker object and `PROFILE_LOCK_CONFLICT` are gone. ADR-003 records the trade-off (online bookings of one psychologist run one after another). A committed-transaction test covers it.
